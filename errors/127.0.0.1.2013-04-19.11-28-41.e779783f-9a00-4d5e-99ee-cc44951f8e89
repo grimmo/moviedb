@@ -1,0 +1,468 @@
+(dp1
+S'output'
+p2
+S"<type 'exceptions.IOError'> unsupported XML-RPC protocol"
+p3
+sS'layer'
+p4
+S'/var/www/web2py/applications/moviedb/controllers/default.py'
+p5
+sS'code'
+p6
+S'# -*- coding: utf-8 -*-\n# this file is released under public domain and you can use without limitations\n\n#########################################################################\n## This is a samples controller\n## - index is the default action of any application\n## - user is required for authentication and authorization\n## - download is for downloading files uploaded in the db (does streaming)\n## - call exposes all registered services (none by default)\n#########################################################################\nimport xmlrpclib\ntmdb_service = xmlrpclib.ServerProxy(\'http://web2py.localdomain/moviedb/tmdb/call/xmlrpc\')\n#tmdb_service = xmlrpclib.ServerProxy(URL(\'moviedb\',\'tmdb\',args=\'call/xmlrpc\'))\n\n\ndef index():\n    film = db(db.film.id>0).select(db.film.titolo,db.film.anno,orderby=[db.film.titolo,db.film.anno])\n    return dict(film=film)   \n    \ndef xmlurl():\n    return dict(uno=tmdb_service,due=xmlrpclib.ServerProxy(URL(\'moviedb\',\'tmdb\',args=\'call/xmlrpc\')))\n\n\ndef user():\n    """\n    exposes:\n    http://..../[app]/default/user/login\n    http://..../[app]/default/user/logout\n    http://..../[app]/default/user/register\n    http://..../[app]/default/user/profile\n    http://..../[app]/default/user/retrieve_password\n    http://..../[app]/default/user/change_password\n    use @auth.requires_login()\n        @auth.requires_membership(\'group name\')\n        @auth.requires_permission(\'read\',\'table name\',record_id)\n    to decorate functions that need access control\n    """\n    return dict(form=auth())\n\n\ndef download():\n    """\n    allows downloading of uploaded files\n    http://..../[app]/default/download/[filename]\n    """\n    return response.download(request, db)\n\n\ndef call():\n    """\n    exposes services. for example:\n    http://..../[app]/default/call/jsonrpc\n    decorate with @services.jsonrpc the functions to expose\n    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv\n    """\n    return service()\n\n\n@auth.requires_signature()\ndef data():\n    """\n    http://..../[app]/default/data/tables\n    http://..../[app]/default/data/create/[table]\n    http://..../[app]/default/data/read/[table]/[id]\n    http://..../[app]/default/data/update/[table]/[id]\n    http://..../[app]/default/data/delete/[table]/[id]\n    http://..../[app]/default/data/select/[table]\n    http://..../[app]/default/data/search/[table]\n    but URLs must be signed, i.e. linked with\n      A(\'table\',_href=URL(\'data/tables\',user_signature=True))\n    or with the signed load operator\n      LOAD(\'default\',\'data.load\',args=\'tables\',ajax=True,user_signature=True)\n    """\n    return dict(form=crud())\n    \ndef film(): \n    f = db.film[request.args(0)]\n    c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.id,db.ruoli.regista)\n    m = db(db.formato.film == f.id).select()\n    session.movie_id = f.id  \n    return dict(film=f,cast=c,media=m,session=session)\n\ndef edit():    \n    return dict(form=crud.update(db.film, request.args(0)))   \n    \ndef movieandcastedit():                            \n    record = db.person(request.args(0)) or redirect(URL(\'index\'))\n    url = URL(\'download\')\n    link = URL(\'list_records\', args=\'db\')\n    form = SQLFORM(db.person, record, deletable=True,  upload=url, linkto=link)\n    if form.process().accepted:\n       response.flash = \'form accepted\'\n    elif form.errors:\n       response.flash = \'form has errors\'\n    return dict(form=form)            \n                \n                \ndef supporto():\n    return dict(form=crud.read(db.supporto, request.args(0)))\n                \n                \ndef persona():\n    try:\n        p = db.moviecast[request.args(0)]\n    except:\n        raise HTTP(404)\n    correlati = persone_e_film(db.ruoli.persona== db(db.moviecast.id == p.id).select().first()).select(db.film.titolo,db.film.id)\n    if p.tmdb_id:       \n       tmdb_data = tmdb_service.get_persondetails(p.tmdb_id)\n       return dict(persona=p,correlati=correlati,tmdb_data=tmdb_data)    \n    else:\n        return dict(persona=p,correlati=correlati) \n    \n    \ndef update_movie_from_tmdb():\n    tmdb_id = request.vars.tmdb_id\n    movie_id = session.movie_id\n    headers = {"Accept": "application/json"}            \n    data = {\'api_key\': THEMOVIEDB_API_KEY,\'language\':\'it\'}\n    r = R("http://api.themoviedb.org/3/movie/%s?%s" % (tmdb_id,urlencode(data)), headers=headers)        \n    response_body = urlopen(r).read()\n    risultato=gluon.contrib.simplejson.loads(response_body)\n    base_url,poster_size = tmdb_config()\n    complete_url=\'%s/%s/%s\' % (base_url,poster_size,risultato[\'poster_path\'])\n    file_locandina = \'applications/moviedb/uploads/%s\' % risultato[\'poster_path\'].split(\'/\')[1]\n    get_loca = urlretrieve(\'%s\' % complete_url,file_locandina)        \n    floca = open(file_locandina, \'rb\')    \n    db(db.film.id==movie_id).update(titolo=risultato[\'title\'],slug=risultato[\'title\'],anno=strftime(\'%Y\',strptime(risultato[\'release_date\'],u\'%Y-%m-%d\')),tmdb_id=risultato[\'id\'],trama=risultato[\'overview\'],locandina=floca)    \n    f = db.film(tmdb_id=risultato[\'id\'])    \n    if f:\n        db(db.film.id == f.id).validate_and_update(slug=\'%s %s\' % (f.titolo,f.anno))\n        session.flash = "Acquisizione del film %s da TMDB riuscita." % f.titolo                \n        floca.close()\n        data = {\'api_key\': THEMOVIEDB_API_KEY}\n        r = R("http://api.themoviedb.org/3/movie/%s/casts?%s" % (tmdb_id,urlencode(data)), headers=headers) \n        response_body = urlopen(r).read()\n        risultato=gluon.contrib.simplejson.loads(response_body)        \n        for persona in risultato[\'cast\']:\n            # Necessario perche\' web2py non forza lo slugify al primo inserimento\n            db.moviecast.update_or_insert(nome=persona[\'name\'],tmdb_id=persona[\'id\'],slug=persona[\'name\'])\n            p = db.moviecast(tmdb_id=persona[\'id\'])\n            if p:\n                #db(db.moviecast.id == p.id).validate_and_update(slug=persona[\'name\'])\n                session.flash = \'Acquisizione di %s nel cast riuscita\' % p.nome\n                db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=False)         \n        for persona in risultato[\'crew\']:\n            if persona[\'job\'] == \'Director\':\n                # Necessario perche\' web2py non forza lo slugify al primo inserimento\n                db.moviecast.update_or_insert(nome=persona[\'name\'],tmdb_id=persona[\'id\'],slug=persona[\'name\'])\n                p = db.moviecast(tmdb_id=persona[\'id\'])                \n                if p:\n                    # Necessario perche\' web2py non forza lo slugify al primo inserimento\n                    #db(db.moviecast.id == p.id).validate_and_update(slug=persona[\'name\'])\n                    session.flash = \'Acquisizione di %s come regista\' % p.nome\n                    db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)\n        #return dict(risultato=risultato)\n        redirect(URL(\'film\', args=[f.id]))\n    \n    \ndef nuovosupporto():\n    return dict(form=crud.create(db.supporto,next=\'supporto/[id]\'))\n\ndef associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):\n    db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)\n    f = db.formato(film=movieid,supporto=supportoid)\n    return f.id \n            \ndef associamedia():\n    if request.vars.film:        \n        db.formato.film.default = request.vars.film\n    if request.vars.supporto:\n        db.formato.supporto.default = request.vars.supporto\n    # Barbatrucco del [0] necessario perche\' altrimenti la url diventa film/[id,id] non si capisce per quale motivo\n    return dict(form=crud.create(db.formato,next=\'film/%s\' % db.formato.film.default[0] ))\n    #return dict(form=request.vars.film)\n\n# Funzione da usare solo per la migrazione da dbfilm django\ndef update_formati():\n    righe = []\n    for row in film_e_formati.select(db.legacy_formato.tipo,db.film.id,db.supporto.id,db.legacy_formato.multiaudio,db.legacy_formato.surround):  righe.append(db.formato.insert(tipo=row.legacy_formato.tipo,film=row.film.id,supporto=row.supporto.id,multiaudio=row.legacy_formato.multiaudio,surround=row.legacy_formato.surround))\n    return dict(righe=righe)                \n\n                \n#def tmdb_update_movie():  \n#     film = db.film[request.vars.movieid]\n#     if not film:\n#         raise HTTP(404)\n#     session.movie_id = film.id     \n#     headers = {"Accept": "application/json"}            \n#     data = {\'api_key\': THEMOVIEDB_API_KEY,\'query\':film.titolo,\'language\':\'it\'}              \n#     r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)\n#     response_body = urlopen(r).read()\n#     film_trovati = gluon.contrib.simplejson.loads(response_body)\n#     risultati = film_trovati[\'results\']            \n#     return dict(form=None,risultati=risultati,film=film)     \n                \n#def tmdb_search():       \n#    form=FORM(\'Titolo:\', INPUT(_name=\'titolotext\'), INPUT(_type=\'submit\'))  \n#    if form.process().accepted:\n#            response.flash = "Ricerca di %s" % form.vars[\'titolotext\']\n#            headers = {"Accept": "application/json"}            \n#            data = {\'api_key\': THEMOVIEDB_API_KEY,\'query\':form.vars[\'titolotext\'],\'language\':\'it\'}\n#            r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)\n            # Cache per 10 secondi dei dati di moviedb\n#            response_body = cache.ram(\'ricerca_titolo\', lambda: urlopen(r).read(), time_expire=10)                                             \n#            film_trovati = gluon.contrib.simplejson.loads(response_body)\n#            risultati = film_trovati[\'results\']            \n#            return dict(form=form,risultati=risultati,funzione_tmdb=\'tmdb_get\')\n#    else:\n#            return dict(form=form,risultati=None,funzione_tmdb=\'tmdb_get\')\n            \n#def tmdb_get():\n#    movieid = request.vars.movieid    \n#    headers = {"Accept": "application/json"}            \n#    data = {\'api_key\': THEMOVIEDB_API_KEY,\'language\':\'it\'}\n#    r = R("http://api.themoviedb.org/3/movie/%s?%s" % (movieid,urlencode(data)), headers=headers)    \n    # Cache per 30 secondi dei dati di moviedb\n#    response_body = cache.ram(\'get_film\', lambda: urlopen(r).read(), time_expire=30)                                 \n#    risultato=gluon.contrib.simplejson.loads(response_body)\n#    base_url,poster_size = tmdb_config()\n#    complete_url=\'%s/%s/%s\' % (base_url,poster_size,risultato[\'poster_path\'])\n#    file_locandina = \'applications/moviedb/uploads/%s\' % risultato[\'poster_path\'].split(\'/\')[1]\n#    get_loca = urlretrieve(\'%s\' % complete_url,file_locandina)        \n#    floca = open(file_locandina, \'rb\')\n#    db.film.update_or_insert(titolo=risultato[\'title\'],slug=risultato[\'title\'],anno=strftime(\'%Y\',strptime(risultato[\'release_date\'],u\'%Y-%m-%d\')),tmdb_id=risultato[\'id\'],trama=risultato[\'overview\'],locandina=floca)    \n#    f = db.film(tmdb_id=risultato[\'id\'])    \n#    if f:\n#        db(db.film.id == f.id).validate_and_update(slug=\'%s %s\' % (f.titolo,f.anno))\n#        session.flash = "Acquisizione del film %s da TMDB riuscita." % f.titolo                \n#        floca.close()\n#        data = {\'api_key\': THEMOVIEDB_API_KEY}\n#        r = R("http://api.themoviedb.org/3/movie/%s/casts?%s" % (movieid,urlencode(data)), headers=headers)\n        # Cache per 5 minuti dei dati di moviedb\n#        response_body = cache.ram(\'get_cast\', lambda: urlopen(r).read(), time_expire=30)            \n#        risultato=gluon.contrib.simplejson.loads(response_body)\n#        for persona in risultato[\'cast\']:\n            # Necessario perche\' web2py non forza lo slugify al primo inserimento\n#            db.moviecast.update_or_insert(nome=persona[\'name\'],tmdb_id=persona[\'id\'],slug=persona[\'name\'])\n#            p = db.moviecast(tmdb_id=persona[\'id\'])\n #           if p:\n#                db(db.moviecast.id == p.id).validate_and_update(slug=persona[\'name\'])\n#                session.flash = \'Acquisizione di %s nel cast riuscita\' % p.nome\n#                db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=False)         \n#            else:\n#                raise ValueError(\'%s non risulta\' % persona[\'name\'])\n#        for persona in risultato[\'crew\']:\n#            if persona[\'job\'] == \'Director\':\n                # Necessario perche\' web2py non forza lo slugify al primo inserimento\n#                db.moviecast.update_or_insert(nome=persona[\'name\'],tmdb_id=persona[\'id\'],slug=persona[\'name\'])\n#                p = db.moviecast(tmdb_id=persona[\'id\'])                \n #               if p:\n                    # Necessario perche\' web2py non forza lo slugify al primo inserimento\n #                   db(db.moviecast.id == p.id).validate_and_update(slug=persona[\'name\'])\n #                   session.flash = \'Acquisizione di %s come regista\' % p.nome\n #                   db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)\n #               else:\n#                    raise ValueError(\'%s non risulta\' % persona[\'name\'])\n        #return dict(risultato=risultato)\n #       redirect(URL(\'film\', args=[f.id]))\n        \n#def tmdb_ajax_moviesearch():           \n#     response.flash = "Ricerca di %s" % request.vars.titolo\n#     headers = {"Accept": "application/json"}            \n#     data = {\'api_key\': THEMOVIEDB_API_KEY,\'query\':request.vars.titolo,\'language\':\'it\'}\n#     r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)\n#     response_body = urlopen(r).read()\n#     film_trovati = gluon.contrib.simplejson.loads(response_body)\n#     risultati = film_trovati[\'results\']            \n#     return dict(risultati=risultati,funzione_tmdb=\'tmdb_get\')\n#\n\nresponse._vars=response._caller(xmlurl)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+S'exception'
+p10
+(dp11
+S'__getslice__'
+p12
+S"<method-wrapper '__getslice__' of exceptions.IOError object>"
+p13
+sS'__str__'
+p14
+S"<method-wrapper '__str__' of exceptions.IOError object>"
+p15
+sS'__reduce__'
+p16
+S'<built-in method __reduce__ of exceptions.IOError object>'
+p17
+sS'__dict__'
+p18
+S'{}'
+p19
+sS'__sizeof__'
+p20
+S'<built-in method __sizeof__ of exceptions.IOError object>'
+p21
+sS'__init__'
+p22
+S"<method-wrapper '__init__' of exceptions.IOError object>"
+p23
+sS'__setattr__'
+p24
+S"<method-wrapper '__setattr__' of exceptions.IOError object>"
+p25
+sS'__reduce_ex__'
+p26
+S'<built-in method __reduce_ex__ of exceptions.IOError object>'
+p27
+sS'__new__'
+p28
+S'<built-in method __new__ of type object>'
+p29
+sS'errno'
+p30
+S'None'
+p31
+sS'__format__'
+p32
+S'<built-in method __format__ of exceptions.IOError object>'
+p33
+sS'__class__'
+p34
+S"<type 'exceptions.IOError'>"
+p35
+sS'filename'
+p36
+S'None'
+p37
+sS'__doc__'
+p38
+S"'I/O operation failed.'"
+p39
+sS'__getitem__'
+p40
+S"<method-wrapper '__getitem__' of exceptions.IOError object>"
+p41
+sS'__setstate__'
+p42
+S'<built-in method __setstate__ of exceptions.IOError object>'
+p43
+sS'__getattribute__'
+p44
+S"<method-wrapper '__getattribute__' of exceptions.IOError object>"
+p45
+sS'args'
+p46
+S"('unsupported XML-RPC protocol',)"
+p47
+sS'__subclasshook__'
+p48
+S'<built-in method __subclasshook__ of type object>'
+p49
+sS'__unicode__'
+p50
+S'<built-in method __unicode__ of exceptions.IOError object>'
+p51
+sS'strerror'
+p52
+S'None'
+p53
+sS'__delattr__'
+p54
+S"<method-wrapper '__delattr__' of exceptions.IOError object>"
+p55
+sS'__repr__'
+p56
+S"<method-wrapper '__repr__' of exceptions.IOError object>"
+p57
+sS'__hash__'
+p58
+S"<method-wrapper '__hash__' of exceptions.IOError object>"
+p59
+ssS'evalue'
+p60
+S'unsupported XML-RPC protocol'
+p61
+sS'request'
+p62
+cgluon.html
+XML_unpickle
+p63
+(S's\x97a\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">ajax</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">application</td><td valign="top">:</td><td><div>moviedb</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">args</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">body</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0xb8bdf880&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cid</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">client</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">controller</td><td valign="top">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cookies</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">session_id_admin</td><td valign="top">:</td><td><div>127.0.0.1-e9305ef4-db82-4943-b76a-b36074c7e4b9<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_moviedb</td><td valign="top">:</td><td><div>127.0.0.1-4bfa9bed-e627-4956-9770-9f8dda731536<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_turniprestito</td><td valign="top">:</td><td><div>127.0.0.1-7966e537-fc78-41a6-86f1-d611b5c8d94f<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_welcome</td><td valign="top">:</td><td><div>127.0.0.1-cd8e3cb4-1a07-4893-9dc7-b81912c973a8<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">env</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">app_folders</td><td valign="top">:</td><td><div>set([&#x27;/var/www/web2py/applications/moviedb/&#x27;, &#x27;/var/www/web2py/applications/admin/&#x27;, &#x27;/var/www/web2py/applications/TurniPrestito/&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">applications_parent</td><td valign="top">:</td><td><div>/var/www/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">db_sessions</td><td valign="top">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">debugging</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">document_root</td><td valign="top">:</td><td><div>/var/www</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gateway_interface</td><td valign="top">:</td><td><div>CGI/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gluon_parent</td><td valign="top">:</td><td><div>/var/www/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept</td><td valign="top">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept_encoding</td><td valign="top">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept_language</td><td valign="top">:</td><td><div>it,en-us;q=0.7,en;q=0.3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_connection</td><td valign="top">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_cookie</td><td valign="top">:</td><td><div>session_id_welcome=127.0.0.1-cd8e3cb4-1a07-4893-9dc7-b81912c973a8; session_id_admin=127.0.0.1-e9305ef4-db82-4943-b76a-b36074c7e4b9; session_id_turniprestito=127.0.0.1-7966e537-fc78-41a6-86f1-d611b5c8d94f; session_id_moviedb=127.0.0.1-4bfa9bed-e627-4956-9770-9f8dda731536</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_dnt</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_host</td><td valign="top">:</td><td><div>web2py.localdomain</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_user_agent</td><td valign="top">:</td><td><div>Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:20.0) Gecko/20100101 Firefox/20.0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_jython</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_pypy</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">local_hosts</td><td valign="top">:</td><td><div><table><tr><td><div>u6b301a.biblio.unimib.it</div></td></tr><tr><td><div>149.132.118.92</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>u6b301a</div></td></tr><tr><td><div>web2py.localdomain</div></td></tr><tr><td><div>127.0.0.12</div></td></tr><tr><td><div>127.0.0.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_application_group</td><td valign="top">:</td><td><div>web2py.localdomain|</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_callable_object</td><td valign="top">:</td><td><div>application</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_enable_sendfile</td><td valign="top">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_handler_script</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_input_chunked</td><td valign="top">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_listener_host</td><td valign="top">:</td><td><div>127.0.0.12</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_listener_port</td><td valign="top">:</td><td><div>443</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_process_group</td><td valign="top">:</td><td><div>web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_queue_start</td><td valign="top">:</td><td><div>1366363721614422</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_request_handler</td><td valign="top">:</td><td><div>wsgi-script</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_script_reloading</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi_version</td><td valign="top">:</td><td><div><table><tr><td><div>3</div></td></tr><tr><td><div>4</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path_info</td><td valign="top">:</td><td><div>/moviedb/default/xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path_translated</td><td valign="top">:</td><td><div>/var/www/web2py/wsgihandler.py/moviedb/default/xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">query_string</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remote_addr</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remote_port</td><td valign="top">:</td><td><div>36071</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">request_method</td><td valign="top">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">request_uri</td><td valign="top">:</td><td><div>/moviedb/default/xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">script_filename</td><td valign="top">:</td><td><div>/var/www/web2py/wsgihandler.py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">script_name</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_addr</td><td valign="top">:</td><td><div>127.0.0.12</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_admin</td><td valign="top">:</td><td><div>[no address given]</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_name</td><td valign="top">:</td><td><div>web2py.localdomain</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_port</td><td valign="top">:</td><td><div>443</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_protocol</td><td valign="top">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_signature</td><td valign="top">:</td><td><div>&lt;address&gt;Apache/2.2.22 (Ubuntu) Server at web2py.localdomain Port 443&lt;/address&gt;\n</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_software</td><td valign="top">:</td><td><div>Apache/2.2.22 (Ubuntu)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">ssl_tls_sni</td><td valign="top">:</td><td><div>web2py.localdomain</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_path</td><td valign="top">:</td><td><div>/var/www/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_version</td><td valign="top">:</td><td><div>2.4.6-stable+timestamp.2013.04.06.17.37.38</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_errors</td><td valign="top">:</td><td><div>&lt;mod_wsgi.Log object at 0xa74b8cf0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_file_wrapper</td><td valign="top">:</td><td><div>&lt;built-in method file_wrapper of mod_wsgi.Adapter object at 0xb8a69bf0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_input</td><td valign="top">:</td><td><div>&lt;mod_wsgi.Input object at 0xa72a3520&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_multiprocess</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_multithread</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_run_once</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_url_scheme</td><td valign="top">:</td><td><div>https</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_version</td><td valign="top">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">extension</td><td valign="top">:</td><td><div>html</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">folder</td><td valign="top">:</td><td><div>/var/www/web2py/applications/moviedb/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">function</td><td valign="top">:</td><td><div>xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">get_vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">global_settings</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">app_folders</td><td valign="top">:</td><td><div>set([&#x27;/var/www/web2py/applications/moviedb/&#x27;, &#x27;/var/www/web2py/applications/admin/&#x27;, &#x27;/var/www/web2py/applications/TurniPrestito/&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">applications_parent</td><td valign="top">:</td><td><div>/var/www/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">db_sessions</td><td valign="top">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">debugging</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gluon_parent</td><td valign="top">:</td><td><div>/var/www/web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_jython</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_pypy</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">local_hosts</td><td valign="top">:</td><td><div><table><tr><td><div>u6b301a.biblio.unimib.it</div></td></tr><tr><td><div>149.132.118.92</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>u6b301a</div></td></tr><tr><td><div>web2py.localdomain</div></td></tr><tr><td><div>127.0.0.12</div></td></tr><tr><td><div>127.0.0.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_version</td><td valign="top">:</td><td><div>2.4.6-stable+timestamp.2013.04.06.17.37.38</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_https</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_local</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_restful</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">now</td><td valign="top">:</td><td><div>datetime.datetime(2013, 4, 19, 11, 28, 41, 615264)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">post_vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">raw_args</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">raw_extension</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">url</td><td valign="top">:</td><td><div>/moviedb/default/xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">utcnow</td><td valign="top">:</td><td><div>datetime.datetime(2013, 4, 19, 9, 28, 41, 615282)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">uuid</td><td valign="top">:</td><td><div>moviedb/127.0.0.1.2013-04-19.11-28-41.e779783f-9a00-4d5e-99ee-cc44951f8e89</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">environ</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">DOCUMENT_ROOT</td><td valign="top">:</td><td><div>/var/www</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">GATEWAY_INTERFACE</td><td valign="top">:</td><td><div>CGI/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT</td><td valign="top">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT_ENCODING</td><td valign="top">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT_LANGUAGE</td><td valign="top">:</td><td><div>it,en-us;q=0.7,en;q=0.3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_CONNECTION</td><td valign="top">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_COOKIE</td><td valign="top">:</td><td><div>session_id_welcome=127.0.0.1-cd8e3cb4-1a07-4893-9dc7-b81912c973a8; session_id_admin=127.0.0.1-e9305ef4-db82-4943-b76a-b36074c7e4b9; session_id_turniprestito=127.0.0.1-7966e537-fc78-41a6-86f1-d611b5c8d94f; session_id_moviedb=127.0.0.1-4bfa9bed-e627-4956-9770-9f8dda731536</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_DNT</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_HOST</td><td valign="top">:</td><td><div>web2py.localdomain</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_USER_AGENT</td><td valign="top">:</td><td><div>Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:20.0) Gecko/20100101 Firefox/20.0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">PATH_INFO</td><td valign="top">:</td><td><div>/moviedb/default/xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">PATH_TRANSLATED</td><td valign="top">:</td><td><div>/var/www/web2py/wsgihandler.py/moviedb/default/xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">QUERY_STRING</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REMOTE_ADDR</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REMOTE_PORT</td><td valign="top">:</td><td><div>36071</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REQUEST_METHOD</td><td valign="top">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REQUEST_URI</td><td valign="top">:</td><td><div>/moviedb/default/xmlurl</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SCRIPT_FILENAME</td><td valign="top">:</td><td><div>/var/www/web2py/wsgihandler.py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SCRIPT_NAME</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_ADDR</td><td valign="top">:</td><td><div>127.0.0.12</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_ADMIN</td><td valign="top">:</td><td><div>[no address given]</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_NAME</td><td valign="top">:</td><td><div>web2py.localdomain</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_PORT</td><td valign="top">:</td><td><div>443</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_PROTOCOL</td><td valign="top">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_SIGNATURE</td><td valign="top">:</td><td><div>&lt;address&gt;Apache/2.2.22 (Ubuntu) Server at web2py.localdomain Port 443&lt;/address&gt;\n</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_SOFTWARE</td><td valign="top">:</td><td><div>Apache/2.2.22 (Ubuntu)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SSL_TLS_SNI</td><td valign="top">:</td><td><div>web2py.localdomain</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.application_group</td><td valign="top">:</td><td><div>web2py.localdomain|</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.callable_object</td><td valign="top">:</td><td><div>application</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.enable_sendfile</td><td valign="top">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.handler_script</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.input_chunked</td><td valign="top">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.listener_host</td><td valign="top">:</td><td><div>127.0.0.12</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.listener_port</td><td valign="top">:</td><td><div>443</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.process_group</td><td valign="top">:</td><td><div>web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.queue_start</td><td valign="top">:</td><td><div>1366363721614422</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.request_handler</td><td valign="top">:</td><td><div>wsgi-script</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.script_reloading</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">mod_wsgi.version</td><td valign="top">:</td><td><div><table><tr><td><div>3</div></td></tr><tr><td><div>4</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.errors</td><td valign="top">:</td><td><div>&lt;mod_wsgi.Log object at 0xa74b8cf0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.file_wrapper</td><td valign="top">:</td><td><div>&lt;built-in method file_wrapper of mod_wsgi.Adapter object at 0xb8a69bf0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.input</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0xb8bdf880&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.multiprocess</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.multithread</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.run_once</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.url_scheme</td><td valign="top">:</td><td><div>https</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.version</td><td valign="top">:</td><td><div>1</div></td></tr></table></div></td></tr></table></div></td></tr></table></div>'
+tRp64
+sS'frames'
+p65
+(lp66
+(dp67
+S'file'
+p68
+S'/var/www/web2py/gluon/restricted.py'
+p69
+sS'dump'
+p70
+(dp71
+S'environment'
+p72
+S"{'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, 'CAT': <class 'gluon.html.CAT'>, 'CENTER': <class 'gluon.html.CENTER'>, ...}"
+p73
+sS'ccode'
+p74
+S'<code object <module> at 0xb8d00770, file "/var/...cations/moviedb/controllers/default.py", line 11>'
+p75
+ssS'lnum'
+p76
+I212
+sS'lines'
+p77
+(dp78
+I207
+S'    try:'
+p79
+sI208
+S'        if isinstance(code, types.CodeType):'
+p80
+sI209
+S'            ccode = code'
+p81
+sI210
+S'        else:'
+p82
+sI211
+S'            ccode = compile2(code, layer)'
+p83
+sI212
+S'        exec ccode in environment'
+p84
+sI213
+S'    except HTTP:'
+p85
+sI214
+S'        raise'
+p86
+sI215
+S'    except RestrictedError:'
+p87
+sI216
+S'        # do not encapsulate (obfuscate) the original RestrictedError'
+p88
+ssS'call'
+p89
+S'(code="# -*- coding: utf-8 -*-\\n# this file is released ...get\')\\n#\\n\\nresponse._vars=response._caller(xmlurl)\\n", environment={\'A\': <class \'gluon.html.A\'>, \'ANY_OF\': <class \'gluon.validators.ANY_OF\'>, \'Auth\': <class \'gluon.tools.Auth\'>, \'B\': <class \'gluon.html.B\'>, \'BEAUTIFY\': <class \'gluon.html.BEAUTIFY\'>, \'BODY\': <class \'gluon.html.BODY\'>, \'BR\': <class \'gluon.html.BR\'>, \'BUTTON\': <class \'gluon.html.BUTTON\'>, \'CAT\': <class \'gluon.html.CAT\'>, \'CENTER\': <class \'gluon.html.CENTER\'>, ...}, layer=\'/var/www/web2py/applications/moviedb/controllers/default.py\')'
+p90
+sS'func'
+p91
+S'restricted'
+p92
+sa(dp93
+g68
+S'/var/www/web2py/applications/moviedb/controllers/default.py'
+p94
+sg70
+(dp95
+sg76
+I272
+sg77
+(dp96
+I261
+S'#def tmdb_ajax_moviesearch():'
+p97
+sI262
+S'#     response.flash = "Ricerca di %s" % request.vars.titolo'
+p98
+sI263
+S'#     headers = {"Accept": "application/json"}'
+p99
+sI264
+S"#     data = {'api_key': THEMOVIEDB_API_KEY,'query':request.vars.titolo,'language':'it'}"
+p100
+sI265
+S'#     r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)'
+p101
+sI266
+S'#     response_body = urlopen(r).read()'
+p102
+sI267
+S'#     film_trovati = gluon.contrib.simplejson.loads(response_body)'
+p103
+sI268
+S"#     risultati = film_trovati['results']"
+p104
+sI269
+S"#     return dict(risultati=risultati,funzione_tmdb='tmdb_get')"
+p105
+sI270
+S'#'
+ssg89
+S'()'
+p106
+sg91
+S'<module>'
+p107
+sa(dp108
+g68
+S'/var/www/web2py/gluon/globals.py'
+p109
+sg70
+(dp110
+S'self'
+p111
+S'undefined'
+p112
+sS'f'
+S'<function xmlurl>'
+p113
+ssg76
+I194
+sg77
+(dp114
+I192
+S"        self.delimiters = ('{{', '}}')"
+p115
+sI193
+S'        self._vars = None'
+p116
+sI194
+S'        self._caller = lambda f: f()'
+p117
+sI195
+S'        self._view_environment = None'
+p118
+sI196
+S'        self._custom_commit = None'
+p119
+sI197
+S'        self._custom_rollback = None'
+p120
+sI198
+S''
+sI189
+S'        self.menu = []             # used by the default view layout'
+p121
+sI190
+S'        self.files = []            # used by web2py_ajax.html'
+p122
+sI191
+S'        self.generic_patterns = []  # patterns to allow generic views'
+p123
+ssg89
+S'(f=<function xmlurl>)'
+p124
+sg91
+S'<lambda>'
+p125
+sa(dp126
+g68
+S'/var/www/web2py/applications/moviedb/controllers/default.py'
+p127
+sg70
+(dp128
+S'global xmlrpclib'
+p129
+S"<module 'xmlrpclib' from '/usr/lib/python2.7/xmlrpclib.pyc'>"
+p130
+sS'args'
+p131
+g112
+sS'due'
+p132
+g112
+sS'global tmdb_service'
+p133
+S'<ServerProxy for web2py.localdomain/moviedb/tmdb/call/xmlrpc>'
+p134
+sS'global URL'
+p135
+S'<function URL>'
+p136
+sS'xmlrpclib.ServerProxy'
+p137
+S'<class xmlrpclib.ServerProxy>'
+p138
+sS'builtindict'
+p139
+S"<type 'dict'>"
+p140
+sS'uno'
+p141
+g112
+ssg76
+I21
+sg77
+(dp142
+I16
+S'def index():'
+p143
+sI17
+S'    film = db(db.film.id>0).select(db.film.titolo,db.film.anno,orderby=[db.film.titolo,db.film.anno])'
+p144
+sI18
+S'    return dict(film=film)'
+p145
+sI19
+S''
+sI20
+S'def xmlurl():'
+p146
+sI21
+S"    return dict(uno=tmdb_service,due=xmlrpclib.ServerProxy(URL('moviedb','tmdb',args='call/xmlrpc')))"
+p147
+sI22
+S''
+sI23
+S''
+sI24
+S'def user():'
+p148
+sI25
+S'    """'
+p149
+ssg89
+S'()'
+p150
+sg91
+S'xmlurl'
+p151
+sa(dp152
+g68
+S'/usr/lib/python2.7/xmlrpclib.py'
+p153
+sg70
+(dp154
+S'builtinIOError'
+p155
+S"<type 'exceptions.IOError'>"
+p156
+ssg76
+I1549
+sg77
+(dp157
+I1544
+S''
+sI1545
+S'        # get the url'
+p158
+sI1546
+S'        import urllib'
+p159
+sI1547
+S'        type, uri = urllib.splittype(uri)'
+p160
+sI1548
+S'        if type not in ("http", "https"):'
+p161
+sI1549
+S'            raise IOError, "unsupported XML-RPC protocol"'
+p162
+sI1550
+S'        self.__host, self.__handler = urllib.splithost(uri)'
+p163
+sI1551
+S'        if not self.__handler:'
+p164
+sI1552
+S'            self.__handler = "/RPC2"'
+p165
+sI1553
+S''
+ssg89
+S"(self=<ServerProxy instance>, uri='/moviedb/moviedb/tmdb/call/xmlrpc', transport=None, encoding=None, verbose=0, allow_none=0, use_datetime=0)"
+p166
+sg91
+g22
+sasS'pyver'
+p167
+S'Python 2.7.3: /usr/bin/python (prefix: /usr)'
+p168
+sS'session'
+p169
+g63
+(S's\x1a\x00\x00\x00<div><table></table></div>'
+tRp170
+sS'etype'
+p171
+S"<type 'exceptions.IOError'>"
+p172
+sS'date'
+p173
+S'Fri Apr 19 11:28:42 2013'
+p174
+sS'response'
+p175
+g63
+(S'sz+\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">body</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0xa74a1200&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cookies</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">session_id_moviedb</td><td valign="top">:</td><td><div>127.0.0.1-4bfa9bed-e627-4956-9770-9f8dda731536<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div>/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">delimiters</td><td valign="top">:</td><td><div><table><tr><td><div>{{</div></td></tr><tr><td><div>}}</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">files</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">flash</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">generic_patterns</td><td valign="top">:</td><td><div><table><tr><td><div>*</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">google_analytics_id</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">headers</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">X-Powered-By</td><td valign="top">:</td><td><div>web2py</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">logo</td><td valign="top">:</td><td><div><a class="brand" href="http://www.web2py.com/"><b>web<span>2</span>py</b>&trade;&nbsp;</a></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">menu</td><td valign="top">:</td><td><div><table><tr><td><div><table><tr><td><div>Home</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/moviedb/default/index</div></td></tr><tr><td><div><table></table></div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div><span class="highlighted">web2py</span></div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>http://web2py.com</div></td></tr><tr><td><div><table><tr><td><div><table><tr><td><div>My Sites</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/site</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>This App</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/design/moviedb</div></td></tr><tr><td><div>[(&lt;lazyT &#x27;Controller&#x27;&gt;, False, &#x27;/admin/default/edit/moviedb/controllers/default.py&#x27;), (&lt;lazyT &#x27;View&#x27;&gt;, False, &#x27;/admin/default/edit/moviedb/views/default/xmlurl.html&#x27;), (&lt;lazyT &#x27;Layout&#x27;&gt;, False, &#x27;/admin/default/edit/moviedb/views/layout.html&#x27;), (&lt;lazyT &#x27;Stylesheet&#x27;&gt;, False, &#x27;/admin/default/edit/moviedb/static/css/web2py.css&#x27;), (&lt;lazyT &#x27;DB Model&#x27;&gt;, False, &#x27;/admin/default/edit/moviedb/models/db.py&#x27;), (&lt;lazyT &#x27;Menu Model&#x27;&gt;, False, &#x27;/admin/default/edit/moviedb/models/menu.py&#x27;), (&lt;lazyT &#x27;Database&#x27;&gt;, False, &#x27;/moviedb/appadmin/index&#x27;), (&lt;lazyT &#x27;Errors&#x27;&gt;, False, &#x27;/admin/default/errors/moviedb&#x27;), (&lt;lazyT &#x27;About&#x27;&gt;, False, &#x27;/admin/default/about/moviedb&#x27;)]</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>web2py.com</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>http://www.web2py.com</div></td></tr><tr><td><div>[(&lt;lazyT &#x27;Download&#x27;&gt;, False, &#x27;http://www.web2py.com/examples/default/download&#x27;), (&lt;lazyT &#x27;Support&#x27;&gt;, False, &#x27;http://www.web2py.com/examples/default/support&#x27;), (&lt;lazyT &#x27;Demo&#x27;&gt;, False, &#x27;http://web2py.com/demo_admin&#x27;), (&lt;lazyT &#x27;Quick Examples&#x27;&gt;, False, &#x27;http://web2py.com/examples/default/examples&#x27;), (&lt;lazyT &#x27;FAQ&#x27;&gt;, False, &#x27;http://web2py.com/AlterEgo&#x27;), (&lt;lazyT &#x27;Videos&#x27;&gt;, False, &#x27;http://www.web2py.com/examples/default/videos/&#x27;), (&lt;lazyT &#x27;Free Applications&#x27;&gt;, False, &#x27;http://web2py.com/appliances&#x27;), (&lt;lazyT &#x27;Plugins&#x27;&gt;, False, &#x27;http://web2py.com/plugins&#x27;), (&lt;lazyT &#x27;Layouts&#x27;&gt;, False, &#x27;http://web2py.com/layouts&#x27;), (&lt;lazyT &#x27;Recipes&#x27;&gt;, False, &#x27;http://web2pyslices.com/&#x27;), (&lt;lazyT &#x27;Semantic&#x27;&gt;, False, &#x27;http://web2py.com/semantic&#x27;)]</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Documentazione</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>http://www.web2py.com/book</div></td></tr><tr><td><div>[(&lt;lazyT &#x27;Preface&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/00&#x27;), (&lt;lazyT &#x27;Introduction&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/01&#x27;), (&lt;lazyT &#x27;Python&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/02&#x27;), (&lt;lazyT &#x27;Overview&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/03&#x27;), (&lt;lazyT &#x27;The Core&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/04&#x27;), (&lt;lazyT &#x27;The Views&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/05&#x27;), (&lt;lazyT &#x27;Database&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/06&#x27;), (&lt;lazyT &#x27;Forms and Validators&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/07&#x27;), (&lt;lazyT &#x27;Email and SMS&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/08&#x27;), (&lt;lazyT &#x27;Access Control&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/09&#x27;), (&lt;lazyT &#x27;Services&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/10&#x27;), (&lt;lazyT &#x27;Ajax Recipes&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/11&#x27;), (&lt;lazyT &#x27;Components and Plugins&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/12&#x27;), (&lt;lazyT &#x27;Deployment Recipes&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/13&#x27;), (&lt;lazyT &#x27;Other Recipes&#x27;&gt;, False, &#x27;http://www.web2py.com/book/default/chapter/14&#x27;), (&lt;lazyT &#x27;Buy this book&#x27;&gt;, False, &#x27;http://stores.lulu.com/web2py&#x27;)]</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Community</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>None</div></td></tr><tr><td><div>[(&lt;lazyT &#x27;Groups&#x27;&gt;, False, &#x27;http://www.web2py.com/examples/default/usergroups&#x27;), (&lt;lazyT &#x27;Twitter&#x27;&gt;, False, &#x27;http://twitter.com/web2py&#x27;), (&lt;lazyT &#x27;Live Chat&#x27;&gt;, False, &#x27;http://webchat.freenode.net/?channels=web2py&#x27;)]</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Plugins</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>None</div></td></tr><tr><td><div>[(&#x27;plugin_wiki&#x27;, False, &#x27;http://web2py.com/examples/default/download&#x27;), (&lt;lazyT &#x27;Other Plugins&#x27;&gt;, False, &#x27;http://web2py.com/plugins&#x27;), (&lt;lazyT &#x27;Layout Plugins&#x27;&gt;, False, &#x27;http://web2py.com/layouts&#x27;)]</div></td></tr></table></div></td></tr></table></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">meta</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">author</td><td valign="top">:</td><td><div>Your Name &lt;you@example.com&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">description</td><td valign="top">:</td><td><div>a cool new app</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">generator</td><td valign="top">:</td><td><div>Web2py Web Framework</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">keywords</td><td valign="top">:</td><td><div>web2py, python, framework</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">models_to_run</td><td valign="top">:</td><td><div><table><tr><td><div>^\\w+\\.py$</div></td></tr><tr><td><div>^default/\\w+\\.py$</div></td></tr><tr><td><div>^default/xmlurl/\\w+\\.py$</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">postprocessing</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_cookie_expires</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_data_name</td><td valign="top">:</td><td><div>session_data_moviedb</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_file</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_filename</td><td valign="top">:</td><td><div>/var/www/web2py/applications/moviedb/sessions/127.0.0.1-4bfa9bed-e627-4956-9770-9f8dda731536</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id</td><td valign="top">:</td><td><div>127.0.0.1-4bfa9bed-e627-4956-9770-9f8dda731536</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_name</td><td valign="top">:</td><td><div>session_id_moviedb</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_new</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_storage_type</td><td valign="top">:</td><td><div>file</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">status</td><td valign="top">:</td><td><div>200</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">subtitle</td><td valign="top">:</td><td><div>Personalizzami!</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">title</td><td valign="top">:</td><td><div>Moviedb</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">view</td><td valign="top">:</td><td><div>default/xmlurl.html</div></td></tr></table></div>'
+tRp176
+sS'locals'
+p177
+(dp178
+S'verbose'
+p179
+S'0'
+sS'encoding'
+p180
+S'None'
+p181
+sS'self'
+p182
+S'<ServerProxy instance>'
+p183
+sS'uri'
+p184
+S"'/moviedb/moviedb/tmdb/call/xmlrpc'"
+p185
+sS'urllib'
+p186
+S"<module 'urllib' from '/usr/lib/python2.7/urllib.pyc'>"
+p187
+sS'use_datetime'
+p188
+S'0'
+sS'allow_none'
+p189
+S'0'
+sS'type'
+p190
+S'None'
+p191
+sS'transport'
+p192
+S'None'
+p193
+sssS'traceback'
+p194
+S'Traceback (most recent call last):\n  File "/var/www/web2py/gluon/restricted.py", line 212, in restricted\n    exec ccode in environment\n  File "/var/www/web2py/applications/moviedb/controllers/default.py", line 272, in <module>\n  File "/var/www/web2py/gluon/globals.py", line 194, in <lambda>\n    self._caller = lambda f: f()\n  File "/var/www/web2py/applications/moviedb/controllers/default.py", line 21, in xmlurl\n    return dict(uno=tmdb_service,due=xmlrpclib.ServerProxy(URL(\'moviedb\',\'tmdb\',args=\'call/xmlrpc\')))\n  File "/usr/lib/python2.7/xmlrpclib.py", line 1549, in __init__\n    raise IOError, "unsupported XML-RPC protocol"\nIOError: unsupported XML-RPC protocol\n'
+p195
+s.

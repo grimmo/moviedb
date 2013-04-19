@@ -1,0 +1,25 @@
+{{extend 'layout.html'}}
+<h1>{{ film.titolo }}</h1>
+<!--<a href="#openModal">Open Modal</a> -->
+{{ if risultati: }}
+
+
+
+<div id="openModal" class="modalDialog">
+<div>
+<a href="#close" title="Close" class="close">X</a>
+<h2> Film trovati </h2>
+
+<TABLE>
+    <THEAD>
+    <TH>Titolo</TH><TH>Anno di uscita</TH><TH>Titolo originale</TH>
+    </THEAD>
+    <TBODY>
+    {{ for risultato in risultati: }}    
+        <TR><TD>{{ =A(risultato['title'],_href=URL('default','update_movie_from_tmdb',vars=dict(tmdb_id=risultato['id']))) }}</TD><TD>{{ = risultato['release_date'] }}</TD><TD>{{ = risultato['original_title'] }}</TD></TR>    
+    {{ pass }}
+    </TBODY>
+</TABLE>
+   	</div>
+</div>     
+{{ pass }}

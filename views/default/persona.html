@@ -1,0 +1,23 @@
+{{extend 'layout.html'}}
+<h1>{{ = persona.nome }}</h1>
+
+&egrave; presente nel cast di  questi film:
+<ul>
+{{ for film in correlati: }}
+    <li>{{ = A(film.titolo,_href=URL('default','film',args=film.id)) }}</li>
+{{ pass }}
+</ul>
+
+{{ if tmdb_data: }}
+	<dt>
+        <dd><strong>Nato il</strong>&nbsp;{{ = tmdb_data['birthday'] }}</dd>
+        <dd><strong>Luogo di nascita</strong>&nbsp;{{ = tmdb_data['place_of_birth'] }}</dd>
+<dd>{{ =A('Visualizza la sua scheda su themoviedb.org',_href='http://www.themoviedb.org/person/%s-%s' % (tmdb_data['id'],persona.slug)) }}</dd>       
+</dt>       
+<br />
+<strong>Biografia</strong>
+<blockquote>
+{{ = tmdb_data['biography'] }}
+</blockquote>
+		
+{{ pass }}
