@@ -52,3 +52,23 @@
 	}
 
 	.close:hover { background: #00d9ff; }
+	
+.input-append button.add-on {
+    height: inherit !important;
+}
+
+#no_table_slug__row {  
+  float:left;
+}
+
+#no_table_slug__label {
+	visibility: hidden;
+}
+
+.w2p_fw {
+  float:left;
+}
+
+.w2p_fl {
+  float:left;
+}

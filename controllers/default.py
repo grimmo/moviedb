@@ -79,6 +79,25 @@ def film():
 def edit():    
     return dict(form=crud.update(db.film, request.args(0)))   
     
+def union(x,y):
+    y.colnames=x.colnames
+    return x|y
+    
+def cerca():  
+    form=SQLFORM.factory(db.film,db.moviecast,fields=['slug'],formstyle='divs',buttons = ['cerca'],_class="input-append")
+    my_extra_element = XML("<button class='btn add-on'><i class='icon-search'></i></button>")
+    form[0].insert(-1,my_extra_element)
+    if form.process().accepted:    
+        chiave = form.vars.slug      
+        risultati_film = db(db.film.slug.contains(chiave)).select(db.film.id,db.film.slug)
+        risultati_attori = db(db.moviecast.slug.contains(chiave)).select(db.moviecast.id,db.moviecast.slug)
+        return dict(risultati_film=risultati_film,risultati_attori=risultati_attori)
+    elif form.errors:
+       response.flash = 'form has errors'
+       return dict(form=form)    
+    else:
+       return dict(form=form)    
+    
 def movieandcastedit():                            
     record = db.person(request.args(0)) or redirect(URL('index'))
     url = URL('download')
@@ -174,7 +193,10 @@ def associamedia():
 def update_formati():
     righe = []
     for row in film_e_formati.select(db.legacy_formato.tipo,db.film.id,db.supporto.id,db.legacy_formato.multiaudio,db.legacy_formato.surround):  righe.append(db.formato.insert(tipo=row.legacy_formato.tipo,film=row.film.id,supporto=row.supporto.id,multiaudio=row.legacy_formato.multiaudio,surround=row.legacy_formato.surround))
-    return dict(righe=righe)                
+    return dict(righe=righe)   
+    
+                 
+             
 
                 
 #def tmdb_update_movie():  
