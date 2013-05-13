@@ -50,6 +50,19 @@ def call():
     supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
     """
     return service()
+    
+def cerca():    
+    form=SQLFORM(db.film,db.moviecast,fields=['slug'])        
+    if form.vars.slug != "" and form.validate(session=None, formname='cercaform'):        
+        chiave = form.vars.slug        
+        risultati_film = db(db.film.slug.contains(chiave)).select(db.film.titolo)
+        risultati_attori = db(db.moviecast.slug.contains(chiave)).select(db.moviecast.nome)
+        return dict(risultati_film=risultati_film,risultati_attori=risultati_attori)        
+    elif form.errors:
+        response.flash = 'Form haz errors'
+    else:
+        return dict(risultati_film=None,risultati_attori=None)
+    
 
 
 @auth.requires_signature()
@@ -71,7 +84,9 @@ def data():
     
 def film(): 
     f = db.film[request.args(0)]
-    c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.id,db.ruoli.regista)
+    if not f:
+        raise HTTP(404)
+    c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.slug,db.ruoli.regista)
     m = db(db.formato.film == f.id).select()
     session.movie_id = f.id  
     return dict(film=f,cast=c,media=m,session=session)
@@ -82,21 +97,6 @@ def edit():
 def union(x,y):
     y.colnames=x.colnames
     return x|y
-    
-def cerca():  
-    form=SQLFORM.factory(db.film,db.moviecast,fields=['slug'],formstyle='divs',buttons = ['cerca'],_class="input-append")
-    my_extra_element = XML("<button class='btn add-on'><i class='icon-search'></i></button>")
-    form[0].insert(-1,my_extra_element)
-    if form.process().accepted:    
-        chiave = form.vars.slug      
-        risultati_film = db(db.film.slug.contains(chiave)).select(db.film.id,db.film.slug)
-        risultati_attori = db(db.moviecast.slug.contains(chiave)).select(db.moviecast.id,db.moviecast.slug)
-        return dict(risultati_film=risultati_film,risultati_attori=risultati_attori)
-    elif form.errors:
-       response.flash = 'form has errors'
-       return dict(form=form)    
-    else:
-       return dict(form=form)    
     
 def movieandcastedit():                            
     record = db.person(request.args(0)) or redirect(URL('index'))
@@ -115,18 +115,22 @@ def supporto():
                 
                 
 def persona():
-    try:
-        p = db.moviecast[request.args(0)]
+    try:        
+        p= db.moviecast(slug=request.args(0))
     except:
         raise HTTP(404)
-    correlati = persone_e_film(db.ruoli.persona== db(db.moviecast.id == p.id).select().first()).select(db.film.titolo,db.film.id)
-    if p.tmdb_id:       
-       tmdb_data = tmdb_service.get_persondetails(p.tmdb_id)
-       return dict(persona=p,correlati=correlati,tmdb_data=tmdb_data)    
+    #apparently, except is not enough
+    if not p:
+        raise HTTP(404)
     else:
-        return dict(persona=p,correlati=correlati) 
+        correlati = persone_e_film(db.ruoli.persona== db(db.moviecast.id == p.id).select().first()).select(db.film.titolo,db.film.id)
+        if p.tmdb_id:       
+           tmdb_data = tmdb_service.get_persondetails(p.tmdb_id)
+           return dict(persona=p,correlati=correlati,tmdb_data=tmdb_data)    
+        else:
+            return dict(persona=p,correlati=correlati) 
     
-    
+'''
 def update_movie_from_tmdb():
     tmdb_id = request.vars.tmdb_id
     movie_id = session.movie_id
@@ -170,7 +174,7 @@ def update_movie_from_tmdb():
                     db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)
         #return dict(risultato=risultato)
         redirect(URL('film', args=[f.id]))
-    
+'''   
     
 def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]'))
@@ -190,99 +194,9 @@ def associamedia():
     #return dict(form=request.vars.film)
 
 # Funzione da usare solo per la migrazione da dbfilm django
+'''
 def update_formati():
     righe = []
     for row in film_e_formati.select(db.legacy_formato.tipo,db.film.id,db.supporto.id,db.legacy_formato.multiaudio,db.legacy_formato.surround):  righe.append(db.formato.insert(tipo=row.legacy_formato.tipo,film=row.film.id,supporto=row.supporto.id,multiaudio=row.legacy_formato.multiaudio,surround=row.legacy_formato.surround))
     return dict(righe=righe)   
-    
-                 
-             
-
-                
-#def tmdb_update_movie():  
-#     film = db.film[request.vars.movieid]
-#     if not film:
-#         raise HTTP(404)
-#     session.movie_id = film.id     
-#     headers = {"Accept": "application/json"}            
-#     data = {'api_key': THEMOVIEDB_API_KEY,'query':film.titolo,'language':'it'}              
-#     r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)
-#     response_body = urlopen(r).read()
-#     film_trovati = gluon.contrib.simplejson.loads(response_body)
-#     risultati = film_trovati['results']            
-#     return dict(form=None,risultati=risultati,film=film)     
-                
-#def tmdb_search():       
-#    form=FORM('Titolo:', INPUT(_name='titolotext'), INPUT(_type='submit'))  
-#    if form.process().accepted:
-#            response.flash = "Ricerca di %s" % form.vars['titolotext']
-#            headers = {"Accept": "application/json"}            
-#            data = {'api_key': THEMOVIEDB_API_KEY,'query':form.vars['titolotext'],'language':'it'}
-#            r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)
-            # Cache per 10 secondi dei dati di moviedb
-#            response_body = cache.ram('ricerca_titolo', lambda: urlopen(r).read(), time_expire=10)                                             
-#            film_trovati = gluon.contrib.simplejson.loads(response_body)
-#            risultati = film_trovati['results']            
-#            return dict(form=form,risultati=risultati,funzione_tmdb='tmdb_get')
-#    else:
-#            return dict(form=form,risultati=None,funzione_tmdb='tmdb_get')
-            
-#def tmdb_get():
-#    movieid = request.vars.movieid    
-#    headers = {"Accept": "application/json"}            
-#    data = {'api_key': THEMOVIEDB_API_KEY,'language':'it'}
-#    r = R("http://api.themoviedb.org/3/movie/%s?%s" % (movieid,urlencode(data)), headers=headers)    
-    # Cache per 30 secondi dei dati di moviedb
-#    response_body = cache.ram('get_film', lambda: urlopen(r).read(), time_expire=30)                                 
-#    risultato=gluon.contrib.simplejson.loads(response_body)
-#    base_url,poster_size = tmdb_config()
-#    complete_url='%s/%s/%s' % (base_url,poster_size,risultato['poster_path'])
-#    file_locandina = 'applications/moviedb/uploads/%s' % risultato['poster_path'].split('/')[1]
-#    get_loca = urlretrieve('%s' % complete_url,file_locandina)        
-#    floca = open(file_locandina, 'rb')
-#    db.film.update_or_insert(titolo=risultato['title'],slug=risultato['title'],anno=strftime('%Y',strptime(risultato['release_date'],u'%Y-%m-%d')),tmdb_id=risultato['id'],trama=risultato['overview'],locandina=floca)    
-#    f = db.film(tmdb_id=risultato['id'])    
-#    if f:
-#        db(db.film.id == f.id).validate_and_update(slug='%s %s' % (f.titolo,f.anno))
-#        session.flash = "Acquisizione del film %s da TMDB riuscita." % f.titolo                
-#        floca.close()
-#        data = {'api_key': THEMOVIEDB_API_KEY}
-#        r = R("http://api.themoviedb.org/3/movie/%s/casts?%s" % (movieid,urlencode(data)), headers=headers)
-        # Cache per 5 minuti dei dati di moviedb
-#        response_body = cache.ram('get_cast', lambda: urlopen(r).read(), time_expire=30)            
-#        risultato=gluon.contrib.simplejson.loads(response_body)
-#        for persona in risultato['cast']:
-            # Necessario perche' web2py non forza lo slugify al primo inserimento
-#            db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=persona['name'])
-#            p = db.moviecast(tmdb_id=persona['id'])
- #           if p:
-#                db(db.moviecast.id == p.id).validate_and_update(slug=persona['name'])
-#                session.flash = 'Acquisizione di %s nel cast riuscita' % p.nome
-#                db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=False)         
-#            else:
-#                raise ValueError('%s non risulta' % persona['name'])
-#        for persona in risultato['crew']:
-#            if persona['job'] == 'Director':
-                # Necessario perche' web2py non forza lo slugify al primo inserimento
-#                db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=persona['name'])
-#                p = db.moviecast(tmdb_id=persona['id'])                
- #               if p:
-                    # Necessario perche' web2py non forza lo slugify al primo inserimento
- #                   db(db.moviecast.id == p.id).validate_and_update(slug=persona['name'])
- #                   session.flash = 'Acquisizione di %s come regista' % p.nome
- #                   db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)
- #               else:
-#                    raise ValueError('%s non risulta' % persona['name'])
-        #return dict(risultato=risultato)
- #       redirect(URL('film', args=[f.id]))
-        
-#def tmdb_ajax_moviesearch():           
-#     response.flash = "Ricerca di %s" % request.vars.titolo
-#     headers = {"Accept": "application/json"}            
-#     data = {'api_key': THEMOVIEDB_API_KEY,'query':request.vars.titolo,'language':'it'}
-#     r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)
-#     response_body = urlopen(r).read()
-#     film_trovati = gluon.contrib.simplejson.loads(response_body)
-#     risultati = film_trovati['results']            
-#     return dict(risultati=risultati,funzione_tmdb='tmdb_get')
-#
+'''

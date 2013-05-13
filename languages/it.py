@@ -204,6 +204,7 @@
 'Stylesheet': 'Foglio di stile (stylesheet)',
 'submit': 'submit',
 'Submit': 'Submit',
+'Success!': 'Success!',
 'Support': 'Support',
 'Sure you want to delete this object?': 'Vuoi veramente cancellare questo oggetto?',
 'Table': 'tabella',

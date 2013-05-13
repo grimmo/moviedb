@@ -1,8 +1,12 @@
 {{extend 'layout.html'}}
+{{=LOAD('default','cerca.load',ajax=True)}}
 {{ if film.tmdb_id: }}
 <script>
     // Funzione di aggiornamento diretto con id di themoviedb.org
     function aggiorna_film() {        
+        $("#tmdbupdate_spinner").addClass("icon-refresh icon-spin");
+        $("#tmdbupdate_btn").attr('disabled','disabled');
+        //$("#tmdbupdate_btn").text('attendere...')
         return ajax('/moviedb/tmdb/update_movie_by_id?tmdb_id={{ = film.tmdb_id }}',[],':eval');
     }
 </script>
@@ -10,7 +14,10 @@
 <script>
     // Funzione di aggiornamento indiretto, e' necessario prima trovare l'id del film corretto
     // su themoviedb.org
-    function aggiorna_film() {
+    function aggiorna_film() {    	 
+        //$("#tmdbupdate_spinner").addClass("icon-refresh icon-spin"); 
+        //$("#tmdbupdate_btn").attr('disabled','disabled');
+        //$("#tmdbupdate_btn").text('attendere...');	
     	window.location.hash = '#'+'openModal';
         $.getJSON('/moviedb/tmdb/call/json/find_title?movie_id={{ =film.id }}', function(data) {
 			var titolitrovati = '';
@@ -23,11 +30,17 @@
 };
 </script>
 {{ pass }}
+<div id="elenco">
 <h1>{{ = film.titolo }} ({{= film.anno }})</h1>
-<INPUT TYPE='button' value='Aggiorna' onclick="aggiorna_film()";/>&nbsp;<INPUT TYPE='button' value='Modifica' onclick="window.location='{{=URL('default','edit',args=film.id)}}'" />
+{{ if film.tmdb_id: }}
+<a class="btn" href="#" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" ></i> Aggiorna</a>
+{{ else: }}
+<a class="btn" href="#openModal" onclick="aggiorna_film()" id="tmdbupdate_btn">Aggiorna</a>
+{{ pass }}
+&nbsp;<a class="btn" href="#" onclick="window.location='{{=URL('default','edit',args=film.id)}}'"><i></i> Modifica</a>
 <dt>
     <dd><strong>Regia:</strong>{{ for registi in cast.find(lambda row:row.ruoli.regista==True):           }}
-{{ =A(registi.moviecast.nome,_href=URL('default','persona',args=registi.moviecast.id)) }}&nbsp;
+{{ =A(registi.moviecast.nome,_href=URL('default','persona',args=registi.moviecast.slug)) }}&nbsp;
 {{ pass }}
 </dd>
 <dd><strong>Visto:</strong>{{ = film.visto }}</dd>
@@ -38,8 +51,8 @@
 </dt>
 <h2>Cast</h2>
 <dt>
-{{ for persona in cast.find(lambda row: row.ruoli.regista==False): }}
-    <dd>{{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.id)) }}</dd>
+{{ for persona in cast.find(lambda row: row.ruoli.regista==False): }}    
+    <dd>{{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}</dd>     
 {{ pass }}
 </dt>
 {{ if media: }}
@@ -56,6 +69,7 @@
 {{ else: }}
 <h2> {{ = A('Associa un supporto',_href=URL('associamedia',vars=dict(film= film.id))) }} </h2>
 {{ pass }}
+</div>
 <div id="openModal" class="modalDialog">
 <div>
 <a href="#close" title="Close" class="close">X</a>
