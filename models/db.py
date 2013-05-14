@@ -104,7 +104,7 @@ db.define_table('supporto',
       Field('collocazione',db.collocazione),
       Field('datacreazione','datetime',default=now),
       Field('datamodifica','datetime',default=now),
-      Field('id_originale','string')      ,
+      Field('id_originale','string',unique=True)      ,
       format=lambda r: '%s n. %s ' % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id)
       )
       
@@ -162,10 +162,6 @@ db.define_table('legacy_formato',
      Field('supporto','reference supporto'),
      Field('multiaudio','boolean',default=False),
      Field('surround','boolean',default=False))
-       
-
-                     
-                                   
        
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
 db.supporto.tipo.requires = IS_IN_DB(db,db.tiposupporto.id,'%(nome)s')

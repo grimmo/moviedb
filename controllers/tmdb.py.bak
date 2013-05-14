@@ -1,15 +1,20 @@
 # coding: utf8
 import gluon.contrib.simplejson
+from gluon.tools import Service
 import cPickle,os
 from time import strptime,strftime
 from urllib2 import Request as R # Utilizzando il nome request ci sono problemi
 from urllib2 import urlopen
 from urllib import urlencode,urlretrieve
 
+service = Service(globals())
+
 filepath = os.path.join(request.folder, "private", "themoviedb.key")
 with open(filepath) as tmdb_api_key_file:
         THEMOVIEDB_API_KEY = cPickle.load(tmdb_api_key_file)
+
         
+                        
 def call():
     """
     exposes services. for example:
@@ -50,29 +55,31 @@ def update_movie_by_id():
     get_loca = urlretrieve('%s' % complete_url,file_locandina)        
     floca = open(file_locandina, 'rb')    
     # Aggiornamento dei dati del film nel db
-    db(db.film.id==movie_id).update(titolo=risultato['title'],slug=risultato['title'],anno=strftime('%Y',strptime(risultato['release_date'],u'%Y-%m-%d')),tmdb_id=risultato['id'],trama=risultato['overview'],locandina=floca)    
+    db(db.film.id==movie_id).update(titolo=risultato['title'],slug=IS_SLUG(check=False)(risultato['title'].encode('utf-8'))[0]),anno=strftime('%Y',strptime(risultato['release_date'],u'%Y-%m-%d')),tmdb_id=risultato['id'],trama=risultato['overview'],locandina=floca)    
     f = db.film(tmdb_id=risultato['id'])    
     if f:
         # Necessario per forzare la conversione in slug del campo slug
-        db(db.film.id == f.id).validate_and_update(slug='%s %s' % (f.titolo,f.anno))        
+        #db(db.film.id == f.id).validate_and_update(slug='%s %s' % (f.titolo,f.anno))        
         floca.close()
         #FIXME: Qui bisognerebbe fermarsi e separare la funzione per l'acquisizione del cast
         data = {'api_key': THEMOVIEDB_API_KEY}
         r = R("http://api.themoviedb.org/3/movie/%s/casts?%s" % (tmdb_id,urlencode(data)), headers=headers) 
         response_body = urlopen(r).read()
         risultato=gluon.contrib.simplejson.loads(response_body)                
-        for persona in risultato['cast']:            
-            db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=persona['name'])            
-            p = db.moviecast(tmdb_id=persona['id'])            
+        for persona in risultato['cast']:                        
+            db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=IS_SLUG(check=False)(persona['name'].encode('utf-8'))[0])       
+            p = db.moviecast(tmdb_id=persona['id'])                     
             # Se l'inserimento/update in moviecast e' andato a buon fine
             if p:                
+                #db(db.moviecast.tmdb_id==persona['id']).validate_and_update(slug=persona['name'].encode('utf-8'))
                 # Allora aggiorna anche la tabella di relazione ruolo/cast
                 db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=False)
         for persona in risultato['crew']:
-            if persona['job'] == 'Director':                
-                db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=persona['name'])
+            if persona['job'] == 'Director':                                
+                db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=IS_SLUG(check=False)(persona['name'].encode('utf-8'))[0])
                 p = db.moviecast(tmdb_id=persona['id'])                
                 if p:
+                    #db(db.moviecast.tmdb_id==persona['id']).validate_and_update(slug=persona['name'].encode('utf-8'))                    
                     db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)        
         return 'document.location = "%s";' % URL('default', 'film', args=[f.id])
         

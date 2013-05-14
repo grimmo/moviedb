@@ -56,20 +56,17 @@
 .input-append button.add-on {
     height: inherit !important;
 }
-/*
-#no_table_slug__row {  
-  float:left;
+
+.navbar-search {
+    position: relative;
 }
 
-#no_table_slug__label {
-	visibility: hidden;
+.navbar-search .search-query {
+    padding-left: 29px !important;
 }
 
-.w2p_fw {
-  float:left;
+.navbar-search .icon-search {
+    position: absolute;
+    top: 7px;
+    left: 11px;    
 }
-
-.w2p_fl {
-  float:left;
-}
-*/

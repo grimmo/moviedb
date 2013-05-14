@@ -1,9 +1,8 @@
 {{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
 {{extend 'layout.html'}}
+{{=LOAD('default','cerca.load',ajax=True)}}
+
 {{ =A('Aggiungi un nuovo film',_href=URL('tmdb','cerca')) }}
-<span id="elenco">
-{{ =film }}
-</span>
-<span class="navbar navbar-inverse navbar-fixed-top navbar-inner">        
-        {{=LOAD('default','cerca.load',ajax=True,ajax_trap=False)}}   
-</span>
+<div id="elenco">
+	{{ =film }}
+</div>

@@ -97,12 +97,13 @@
     <!-- Masthead ================================================== -->
     <header class="mastheader row" id="header">
         <div class="span12">
-            <div class="page-header">
+            <!-- <div class="page-header">                
                 <h1>
-                    {{=response.title or request.application}}
+                    {{=response.title or request.application }}                     
                     <small>{{=response.subtitle or ''}}</small>
-                </h1>
+                </h1>                
             </div>
+            -->
         </div>
     </header>
 
@@ -166,5 +167,6 @@
   });</script>
   {{pass}}
   <script src="{{=URL('static','js/share.js',vars=dict(static=URL('static','images')))}}"></script>
+  <script src="{{=URL('static','js/bootstrap-typeahead.js')}}"></script>  
 </body>
 </html>

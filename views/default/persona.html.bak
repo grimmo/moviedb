@@ -13,9 +13,11 @@
         <dd><strong>Nato il</strong>&nbsp;{{ = tmdb_data['birthday'] }}</dd>
         <dd><strong>Luogo di nascita</strong>&nbsp;{{ = tmdb_data['place_of_birth'] }}</dd>
 <dd>{{ =A('Visualizza la sua scheda su themoviedb.org',_href='http://www.themoviedb.org/person/%s-%s' % (tmdb_data['id'],persona.slug)) }}</dd>       
-       
+</dt>       
 <br />
-<dd><strong>Biografia</strong>:{{ = tmdb_data['biography'] }}</dd>
-</dt>
-	{{ =tmdb_data }}	
+<strong>Biografia</strong>
+<blockquote>
+{{ = tmdb_data['biography'] }}
+</blockquote>
+		
 {{ pass }}

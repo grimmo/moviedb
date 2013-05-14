@@ -31,34 +31,47 @@ even if the function is called via ajax.
 <div class="navbar navbar-inverse navbar-fixed-top">    
     <div class='navbar-inner'>
         <div class='container'>
-            <a class='brand'>MovieDB</a>
+            <a class='brand' href="/moviedb">MovieDB</a>
             <ul class='nav'>
-                <li><a>Item 1</a></li>
+                <li><a href="{{=URL('tmdb','cerca',extension='html')}}"><i class="icon-plus-sign" title="Aggiungi nuovo film da themoviedb.org"></i></a></li>
                 <li><a>Item 2</a></li>
             </ul>
             <!-- <form class="navbar-search pull-left" onsubmit="cerca(document.getElementById('chiavericerca').value); return false" >                 -->
-            <form class="navbar-search pull-left" method="post">            
-            <input id="chiavericerca" name="slug" type="text" class="search-query" placeholder="Cerca">
-            <input type="submit" />
-            <input type="hidden" name="_formname" value="cercaform" />            
+            <form class="navbar-search" method="post">                         
+            <input id="chiavericerca" name="slug" type="text" class="search-query span3" placeholder="Cerca" autocomplete="off">            
+            <div class="icon-search"></div>
+            <!-- <input type="submit" value = ""/> -->
+            <input type="hidden" name="_formname" value="cercaform" />                            
             </form>
         </div>
     </div>
-</div>
-<div id="elenco">
-    {{ if risultati_film: }}
-    {{=risultati_film}}
-    {{ elif risultati_attori: }}
-    {{=risultati_attori}}    
-    {{ pass }}
-</div>
+</div>     
+    	{{ if risultati_film: }}    	    	
+        <div id="risultati" class="alert">    
+        	<button type="button" class="close" data-dismiss="alert">&times;</button>
+    		{{=risultati_film}}        
+		</div>
+    	{{ elif risultati_attori: }}
+    	<div id="risultati" class="alert">    
+    		<button type="button" class="close" data-dismiss="alert">&times;</button>	    	
+    		{{=risultati_attori}}
+		</div>
+    	{{ pass }}    	
 <script>
-function cerca(chiave)
-{
-   $.post('cerca.json', {'chiave': chiave },
-   function(data) {     
-     $('#elenco').text(data);
-       //display_risultati(data)
-     });
-}
+
+    $(document).ready(function() {
+    $('#chiavericerca input').typeahead({
+  source: '/moviedb/default/call/json/ajaxsearch'
+});
+   
+   });
+
+    //function cerca(chiave)
+    //{
+    //$.post('cerca.json', {'chiave': chiave },
+    //function(data) {     
+    //$('#risultati').text(data);
+    ////display_risultati(data)
+    // });
+    //}
 </script>

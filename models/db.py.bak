@@ -104,7 +104,7 @@ db.define_table('supporto',
       Field('collocazione',db.collocazione),
       Field('datacreazione','datetime',default=now),
       Field('datamodifica','datetime',default=now),
-      Field('id_originale','string')      ,
+      Field('id_originale','string',unique=True)      ,
       format=lambda r: '%s n. %s ' % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id)
       )
       
@@ -173,11 +173,11 @@ db.supporto.collocazione.requires= IS_IN_DB(db,db.collocazione.id,'%(descrizione
 db.formato.film.requires = IS_IN_DB(db,db.film.id,'%(titolo)s')
 db.formato.supporto.requires = IS_IN_DB(db,db.supporto.id,lambda r: "%s n. %s" % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id))
 #db.formato.supporto.represent = lambda value,row: db.tipoformato[value].nome
-db.tags.slug.requires = IS_SLUG()
-db.moviecast.slug.requires = IS_SLUG()
-db.film.slug.requires = IS_SLUG()
-db.film.titolo.represent = lambda value,row:     A(value, _href=URL('film', args=db.film(db.film.titolo==value).id))
+db.tags.slug.requires = IS_SLUG(check=False)
+db.moviecast.slug.requires = IS_SLUG(check=False)
+db.film.slug.requires = IS_SLUG(check=False)
+db.film.titolo.represent = lambda value,row:     A(value, _href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
 persone_e_film = db((db.film.id==db.ruoli.film)         & (db.moviecast.id ==db.ruoli.persona))
 film_e_supporti = db((db.film.id==db.formato.film)         & (db.supporto.id ==db.formato.supporto))
-db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).tmdb_id))
+db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).slug,extension='html'))
 film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))

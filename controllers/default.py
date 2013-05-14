@@ -9,7 +9,6 @@
 ## - call exposes all registered services (none by default)
 #########################################################################
 import xmlrpclib
-#tmdb_service = xmlrpclib.ServerProxy('http://web2py.localdomain/moviedb/tmdb/call/xmlrpc')
 tmdb_service = xmlrpclib.ServerProxy(URL('moviedb','tmdb','call',args='xmlrpc',scheme=True,host=True))
 
 
@@ -62,9 +61,25 @@ def cerca():
         response.flash = 'Form haz errors'
     else:
         return dict(risultati_film=None,risultati_attori=None)
-    
-
-
+        
+@service.json  
+def ajaxsearch():
+    return dict(val=[{'id': 1,'name':'Giovanni','surname':'Ribisi'}])
+'''
+def ajaxsearch():    
+    form=SQLFORM(db.film,db.moviecast,fields=['slug'])        
+    if form.vars.slug != "" and form.validate(session=None, formname='cercaform'):        
+        chiave = form.vars.slug        
+        risultati_film = db(db.film.slug.contains(chiave)).select(db.film.titolo)
+        risultati_attori = db(db.moviecast.slug.contains(chiave)).select(db.moviecast.nome)
+        return [attore for attore in risultati_attori]
+        #return dict(risultati_film=[risultati_film,risultati_attori])        
+    elif form.errors:
+        response.flash = 'Form haz errors'
+    else:
+        return ['cazzo']
+        #return dict(risultati_film=None,risultati_attori=None)
+'''
 @auth.requires_signature()
 def data():
     """
@@ -110,8 +125,16 @@ def movieandcastedit():
     return dict(form=form)            
                 
                 
-def supporto():
-    return dict(form=crud.read(db.supporto, request.args(0)))
+def supporto():    
+    media = db.supporto(id=request.args(0))
+    if not media:
+        raise HTTP(404)
+    if media.id_originale:
+        response.title = '%s n.%s*' % (media.tipo.nome,media.id_originale)
+    else:
+        response.title = '%s n.%s' % (media.tipo.nome,media.id)
+    contenuto = film_e_supporti(db.formato.supporto==media.id).select()
+    return dict(media=media,contenuto=contenuto)    
                 
                 
 def persona():
@@ -130,54 +153,9 @@ def persona():
         else:
             return dict(persona=p,correlati=correlati) 
     
-'''
-def update_movie_from_tmdb():
-    tmdb_id = request.vars.tmdb_id
-    movie_id = session.movie_id
-    headers = {"Accept": "application/json"}            
-    data = {'api_key': THEMOVIEDB_API_KEY,'language':'it'}
-    r = R("http://api.themoviedb.org/3/movie/%s?%s" % (tmdb_id,urlencode(data)), headers=headers)        
-    response_body = urlopen(r).read()
-    risultato=gluon.contrib.simplejson.loads(response_body)
-    base_url,poster_size = tmdb_config()
-    complete_url='%s/%s/%s' % (base_url,poster_size,risultato['poster_path'])
-    file_locandina = 'applications/moviedb/uploads/%s' % risultato['poster_path'].split('/')[1]
-    get_loca = urlretrieve('%s' % complete_url,file_locandina)        
-    floca = open(file_locandina, 'rb')    
-    db(db.film.id==movie_id).update(titolo=risultato['title'],slug=risultato['title'],anno=strftime('%Y',strptime(risultato['release_date'],u'%Y-%m-%d')),tmdb_id=risultato['id'],trama=risultato['overview'],locandina=floca)    
-    f = db.film(tmdb_id=risultato['id'])    
-    if f:
-        db(db.film.id == f.id).validate_and_update(slug='%s %s' % (f.titolo,f.anno))
-        session.flash = "Acquisizione del film %s da TMDB riuscita." % f.titolo                
-        floca.close()
-        data = {'api_key': THEMOVIEDB_API_KEY}
-        r = R("http://api.themoviedb.org/3/movie/%s/casts?%s" % (tmdb_id,urlencode(data)), headers=headers) 
-        response_body = urlopen(r).read()
-        risultato=gluon.contrib.simplejson.loads(response_body)        
-        for persona in risultato['cast']:
-            # Necessario perche' web2py non forza lo slugify al primo inserimento
-            db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=persona['name'])
-            p = db.moviecast(tmdb_id=persona['id'])
-            if p:
-                #db(db.moviecast.id == p.id).validate_and_update(slug=persona['name'])
-                session.flash = 'Acquisizione di %s nel cast riuscita' % p.nome
-                db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=False)         
-        for persona in risultato['crew']:
-            if persona['job'] == 'Director':
-                # Necessario perche' web2py non forza lo slugify al primo inserimento
-                db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=persona['name'])
-                p = db.moviecast(tmdb_id=persona['id'])                
-                if p:
-                    # Necessario perche' web2py non forza lo slugify al primo inserimento
-                    #db(db.moviecast.id == p.id).validate_and_update(slug=persona['name'])
-                    session.flash = 'Acquisizione di %s come regista' % p.nome
-                    db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)
-        #return dict(risultato=risultato)
-        redirect(URL('film', args=[f.id]))
-'''   
     
 def nuovosupporto():
-    return dict(form=crud.create(db.supporto,next='supporto/[id]'))
+    return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)

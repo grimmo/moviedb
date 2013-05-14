@@ -1,8 +1,6 @@
 {{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
 {{extend 'layout.html'}}
 {{=LOAD('default','cerca.load',ajax=True)}}
-
-{{ =A('Aggiungi un nuovo film',_href=URL('tmdb','cerca')) }}
 <div id="elenco">
 	{{ =film }}
 </div>

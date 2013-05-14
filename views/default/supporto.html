@@ -1,0 +1,22 @@
+{{extend 'layout.html'}}
+{{=LOAD('default','cerca.load',ajax=True)}}
+<h1><i class="icon-save"></i>&nbsp;{{= media.tipo.nome }}&nbsp;n.
+    {{ if media.id_originale: }}
+    {{ = media.id_originale }}&nbsp;<i class="icon-asterisk" title="Imported from dbfilm"></i>
+    {{ else: }}
+		{{ = media.id }}
+    {{ pass }}
+</h1>
+<a class="btn btn-large btn-primary" href="#"><i class="icon-plus"></i>&nbsp;Aggiungi film</a>
+<dl class="dl-horizontal">
+    <dt>Creato il</dt>
+    <dd>{{ = media.datacreazione }}</dd>
+    <dt>Ultima modifica</dt>
+    <dd>{{ = media.datamodifica }}</dd>
+</dl>
+<h3>Contiene: </h3>
+<ul>
+{{ for video in contenuto: }}
+    <li><a href="{{=URL('default','film',args=(video.film.id))}}">{{ =video.film.titolo }}</a>&nbsp;in formato&nbsp;<em>{{=video.formato.tipo}}</em></li> 
+{{ pass }}
+</ul>
