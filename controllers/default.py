@@ -97,10 +97,13 @@ def data():
     """
     return dict(form=crud())
     
-def film(): 
-    f = db.film[request.args(0)]
-    if not f:
-        raise HTTP(404)
+def film():
+    try:
+        f = db.film[request.args(0)]
+    except:
+        f = db(db.film.slug == request.args(0)).select().first()
+        if not f:
+            raise HTTP(404)        
     c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.slug,db.ruoli.regista)
     m = db(db.formato.film == f.id).select()
     session.movie_id = f.id  
@@ -170,6 +173,32 @@ def associamedia():
     # Barbatrucco del [0] necessario perche' altrimenti la url diventa film/[id,id] non si capisce per quale motivo
     return dict(form=crud.create(db.formato,next='film/%s' % db.formato.film.default[0] ))
     #return dict(form=request.vars.film)
+    
+def get_movie_poster():
+    tmdb_id = request.vars.tmdb_id
+    if tmdb_id:
+        response = tmdb_service.get_movie_poster(tmdb_id)
+        if not response['errors']:
+            return response['result']
+        else:
+            raise HTTP(500,response['errors'])
+    else:
+        raise HTTP(404,'Did not specify themoviedb id')
+        
+def get_movie_details():
+    tmdb_id = request.vars.tmdb_id
+    if tmdb_id:
+        response = tmdb_service.get_movie_details(tmdb_id)
+        if not response['errors'] and not response['cast']['errors']:
+            return redirect(URL('default','film',args=(response['result'])))
+        elif not response['errors']:
+            session.flash = (response['cast']['errors'])
+            return redirect(URL('moviedb','default','film',args=(response['result'])))
+        else:
+            raise HTTP(500,response['errors'])
+    else:
+        raise HTTP(404,'Did not specify themoviedb id')
+        
 
 # Funzione da usare solo per la migrazione da dbfilm django
 '''

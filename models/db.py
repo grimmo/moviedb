@@ -171,7 +171,7 @@ db.formato.supporto.requires = IS_IN_DB(db,db.supporto.id,lambda r: "%s n. %s" %
 #db.formato.supporto.represent = lambda value,row: db.tipoformato[value].nome
 db.tags.slug.requires = IS_SLUG(check=False)
 db.moviecast.slug.requires = IS_SLUG(check=False)
-db.film.slug.requires = IS_SLUG(check=False)
+db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
 db.film.titolo.represent = lambda value,row:     A(value, _href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
 persone_e_film = db((db.film.id==db.ruoli.film)         & (db.moviecast.id ==db.ruoli.persona))
 film_e_supporti = db((db.film.id==db.formato.film)         & (db.supporto.id ==db.formato.supporto))
