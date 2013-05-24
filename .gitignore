@@ -1,0 +1,17 @@
+syntax: glob
+*~
+*.pyc
+*.pyo
+*.bak
+*.orig
+cache/*
+databases/*
+sessions/*
+errors/*
+private/*
+uploads/*
+progress.log
+routes.example.py
+__init__.py
+ABOUT
+LICENSE
