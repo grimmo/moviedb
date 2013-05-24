@@ -1,37 +1,21 @@
 {{extend 'layout.html'}}
-{{=LOAD('default','cerca.load',ajax=True,extension='html')}}
-{{ if film.tmdb_id: }}
-<script>
-    // Funzione di aggiornamento diretto con id di themoviedb.org
-    function aggiorna_film() {        
-        $("#tmdbupdate_spinner").addClass("icon-refresh icon-spin");
-        $("#tmdbupdate_btn").attr('disabled','disabled');
-        //$("#tmdbupdate_btn").text('attendere...')
-        return ajax('/moviedb/tmdb/update_movie_by_id?tmdb_id={{ = film.tmdb_id }}',[],':eval');
-    }
-</script>
-{{ else: }}
-<script>
-    // Funzione di aggiornamento indiretto, e' necessario prima trovare l'id del film corretto
-    // su themoviedb.org
-    function aggiorna_film() {    	 
-        //$("#tmdbupdate_spinner").addClass("icon-refresh icon-spin"); 
-        //$("#tmdbupdate_btn").attr('disabled','disabled');
-        //$("#tmdbupdate_btn").text('attendere...');	
-    	window.location.hash = '#'+'openModal';
-        $.getJSON('/moviedb/tmdb/call/json/find_title?movie_id={{ =film.id }}', function(data) {
-			var titolitrovati = '';
-			$.each(data, function(results) {
-                var ajax_url = '/moviedb/tmdb/update_movie_by_id?tmdb_id='+data[results].id;
-                titolitrovati = titolitrovati+'<dd><a href="#" onclick="ajax(\'' + ajax_url +'\',[],\':eval\')"><strong>'+data[results].title+'</strong></a>&nbsp;('+data[results].release_date+')</dd>';
-			});
-			$('.TitoliTrovati').html(titolitrovati);
-		});
-};
-</script>
-{{ pass }}
+{{=LOAD('default','cerca.load',ajax=True)}}
 <div id="elenco">
-<h1>{{ = film.titolo }} ({{= film.anno }})</h1>
+<h1 class="text-center">{{ = film.titolo }} 
+    {{ if film.anno <> 0: }}
+({{= film.anno }})
+    {{ pass }}
+&nbsp;    
+    {{ if film.visto: }}
+    <i class="icon-ticket icon-border" title="Hai già visto questo film"></i>
+    {{ pass }}
+&nbsp;
+    {{ if film.masterizzato: }}
+    <i class="icon-save icon-border" title="Questo film è associato a uno o più supporti"></i>
+    {{ pass }}
+</h1>
+
+
 {{ if film.tmdb_id: }}
 <a class="btn" href="#" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" ></i> Aggiorna</a>
 {{ else: }}
@@ -39,11 +23,11 @@
 {{ pass }}
 &nbsp;<a class="btn" href="#" onclick="window.location='{{=URL('default','edit',args=film.id)}}'"><i></i> Modifica</a>
 <dt>
-    <dd><strong>Regia:</strong>{{ for registi in cast.find(lambda row:row.ruoli.regista==True):           }}
-{{ =A(registi.moviecast.nome,_href=URL('default','persona',args=registi.moviecast.slug)) }}&nbsp;
+    <dd><strong>Regia:</strong>
+        {{ for persona in cast.find(lambda row: row.ruoli.regista==True): }}    
+    {{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}&nbsp
 {{ pass }}
 </dd>
-<dd><strong>Visto:</strong>{{ = film.visto }}</dd>
 <dd><strong>Masterizzato:</strong>{{ = film.masterizzato }}</dd>
 <dd><strong>Giudizio:</strong>{{ = film.giudizio_mio }}</dd>
 <dd><strong>Trama:</strong>{{ = film.trama }}</dd>
@@ -79,3 +63,33 @@
 </dt>
    	</div>
 </div>
+{{ if film.tmdb_id: }}
+<script>
+    // Funzione di aggiornamento diretto con id di themoviedb.org
+    function aggiorna_film() {        
+        $("#tmdbupdate_spinner").addClass("icon-refresh icon-spin");
+        $("#tmdbupdate_btn").attr('disabled','disabled');
+        //$("#tmdbupdate_btn").text('attendere...')
+        return ajax('/moviedb/tmdb/update_movie_by_id?tmdb_id={{ = film.tmdb_id }}',[],':eval');
+    }
+</script>
+{{ else: }}
+<script>
+    // Funzione di aggiornamento indiretto, e' necessario prima trovare l'id del film corretto
+    // su themoviedb.org
+    function aggiorna_film() {    	 
+        //$("#tmdbupdate_spinner").addClass("icon-refresh icon-spin"); 
+        //$("#tmdbupdate_btn").attr('disabled','disabled');
+        //$("#tmdbupdate_btn").text('attendere...');	
+    	window.location.hash = '#'+'openModal';
+        $.getJSON('/moviedb/tmdb/call/json/find_title?movie_id={{ =film.id }}', function(data) {
+			var titolitrovati = '';
+			$.each(data, function(results) {
+                var ajax_url = '/moviedb/tmdb/update_movie_by_id?tmdb_id='+data[results].id;
+                titolitrovati = titolitrovati+'<dd><a href="#" onclick="ajax(\'' + ajax_url +'\',[],\':eval\')"><strong>'+data[results].title+'</strong></a>&nbsp;('+data[results].release_date+')</dd>';
+			});
+			$('.TitoliTrovati').html(titolitrovati);
+		});
+};
+</script>
+{{ pass }}

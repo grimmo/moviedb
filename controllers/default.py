@@ -13,6 +13,7 @@ tmdb_service = xmlrpclib.ServerProxy(URL('moviedb','tmdb','call',args='xmlrpc',s
 
 
 def index():
+    session.forget()
     film = db(db.film.id>0).select(db.film.titolo,db.film.anno,orderby=[db.film.titolo,db.film.anno])
     return dict(film=film)   
 
@@ -165,14 +166,22 @@ def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     f = db.formato(film=movieid,supporto=supportoid)
     return f.id 
             
-def associamedia():
-    if request.vars.film:        
-        db.formato.film.default = request.vars.film
-    if request.vars.supporto:
-        db.formato.supporto.default = request.vars.supporto
-    # Barbatrucco del [0] necessario perche' altrimenti la url diventa film/[id,id] non si capisce per quale motivo
-    return dict(form=crud.create(db.formato,next='film/%s' % db.formato.film.default[0] ))
-    #return dict(form=request.vars.film)
+def associamedia():    
+    "Add new relation between movie_id and media_id on formato table"
+    def on_accept_suppoform(form):
+        "A new media has been added to supporto table, we set session variable media_id to the corresponding id"
+        session.flash = "new media added"
+        session.media_id = form.vars.id
+    if session.movie_id:        
+        db.formato.film.default = session.movie_id
+    else:
+        raise HTTP(404,'No movie specified')
+    if session.media_id:
+        "If media_id is present, autofill form"
+        db.formato.supporto.default = session.media_id        
+        return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id))
+    else:
+        return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id),suppoform=crud.create(db.supporto,next='associamedia',fields=['tipo','collocazione'],onaccept=on_accept_suppoform))
     
 def get_movie_poster():
     tmdb_id = request.vars.tmdb_id

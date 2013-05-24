@@ -14,7 +14,7 @@
     </THEAD>
     <TBODY>
     {{ for film in risultati: }}    
-        <TR><TD>{{ =A(film['title'],_href=URL('default','tmdb_get',vars=dict(movieid=film['id']))) }}</TD><TD>{{ = film['release_date'] }}</TD><TD>{{ = film['original_title'] }}</TD></TR>    
+        <TR><TD>{{ =A(film['title'],_href=URL('default',funzione_tmdb,vars=dict(movieid=film['id']))) }}</TD><TD>{{ = film['release_date'] }}</TD><TD>{{ = film['original_title'] }}</TD></TR>    
     {{ pass }}
     </TBODY>
 </TABLE>

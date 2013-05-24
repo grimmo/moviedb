@@ -31,11 +31,7 @@ even if the function is called via ajax.
 <div class="navbar navbar-inverse navbar-fixed-top">    
     <div class='navbar-inner'>
         <div class='container'>
-            <a class='brand' href="/moviedb">MovieDB</a>
-            <ul class='nav'>
-                <li><a href="{{=URL('tmdb','cerca',extension='html')}}"><i class="icon-plus-sign" title="Aggiungi nuovo film da themoviedb.org"></i></a></li>
-                <li><a>Item 2</a></li>
-            </ul>
+            <a class='brand' href="/moviedb">MovieDB</a>            
             <!-- <form class="navbar-search pull-left" onsubmit="cerca(document.getElementById('chiavericerca').value); return false" >                 -->
             <form class="navbar-search" method="post">                         
             <input id="chiavericerca" name="slug" type="text" class="search-query span3" placeholder="Cerca" autocomplete="off">            
@@ -43,6 +39,15 @@ even if the function is called via ajax.
             <!-- <input type="submit" value = ""/> -->
             <input type="hidden" name="_formname" value="cercaform" />                            
             </form>
+            <li class='nav dropdown'>                
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                    <i class="icon-plus-sign icon-2x"></i>
+                    <!-- <b class="caret"></b> -->
+                </a>
+                <ul class="dropdown-menu">
+                <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">Fetch new movie</a></li>
+                <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">Add new media</a></li>
+            </ul>
         </div>
     </div>
 </div>     

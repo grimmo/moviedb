@@ -1,3 +1,22 @@
 {{extend 'layout.html'}}
-<h1>Questo è il template tmdb/cerca.html</h1>
-{{=BEAUTIFY(response._vars)}}
+{{ if form: }}
+<h1>Inserisci il titolo da cercare</h1>
+{{ = form }}
+{{ pass }}
+
+{{ if risultati: }}
+
+<h2> Film trovati </h2>
+
+<TABLE>
+    <THEAD>
+    <TH>Titolo</TH><TH>Anno di uscita</TH><TH>Titolo originale</TH>
+    </THEAD>
+    <TBODY>
+    {{ for film in risultati: }}    
+        <TR><TD>{{ =A(film['title'],_href=URL('default',funzione_tmdb,vars=dict(tmdb_id=film['id']))) }}</TD><TD>{{ = film['release_date'] }}</TD><TD>{{ = film['original_title'] }}</TD></TR>    
+    {{ pass }}
+    </TBODY>
+</TABLE>
+        
+{{ pass }}

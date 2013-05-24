@@ -140,7 +140,7 @@ db.define_table('film',
      Field('trama','text'),
      Field('adulti','boolean',default=False),
      Field('tmdb_id','string'),
-     Field('id_originale','string')     
+     Field('id_originale','string')   
 )
      
 db.define_table('ruoli',
@@ -162,11 +162,9 @@ db.define_table('legacy_formato',
      Field('supporto','reference supporto'),
      Field('multiaudio','boolean',default=False),
      Field('surround','boolean',default=False))
+ 
        
 
-                     
-                                   
-       
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
 db.supporto.tipo.requires = IS_IN_DB(db,db.tiposupporto.id,'%(nome)s')
 db.supporto.collocazione.requires= IS_IN_DB(db,db.collocazione.id,'%(descrizione)s')
@@ -175,9 +173,12 @@ db.formato.supporto.requires = IS_IN_DB(db,db.supporto.id,lambda r: "%s n. %s" %
 #db.formato.supporto.represent = lambda value,row: db.tipoformato[value].nome
 db.tags.slug.requires = IS_SLUG(check=False)
 db.moviecast.slug.requires = IS_SLUG(check=False)
-db.film.slug.requires = IS_SLUG(check=False)
-db.film.titolo.represent = lambda value,row:     A(value, _href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
+db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
+db.film.titolo.represent = lambda value,row:     A("%s (%s)" % (value,db.film(db.film.titolo==value).anno),_href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
 persone_e_film = db((db.film.id==db.ruoli.film)         & (db.moviecast.id ==db.ruoli.persona))
+#LEFT OUTER JOIN
+people_and_movies=db().select(db.film.ALL, db.ruoli.ALL,left=db.ruoli.on(db.film.id==db.ruoli.id))
+#db.film.registi = Field.Virtual(lambda row: [directors for directors in people_and_movies((db.ruoli.film==row.film.id)&(db.ruoli.regista ==True))])
 film_e_supporti = db((db.film.id==db.formato.film)         & (db.supporto.id ==db.formato.supporto))
 db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).slug,extension='html'))
 film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))
