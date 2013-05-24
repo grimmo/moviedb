@@ -1,0 +1,13 @@
+{{extend 'layout.html'}}
+{{=LOAD('default','cerca.load',ajax=True)}}
+<h1>Add new media to {{ =A("%s (%s)" %(db.film[session.movie_id].titolo,db.film[session.movie_id].anno),_href=URL('default','film',args=db.film[session.movie_id].slug)) }}</h1>
+{{ =form }}
+{{ try: }}
+{{ if suppoform: }}
+<button class="btn btn-warning" onclick="jQuery('.formsupporto').slideToggle()"><i class="icon-plus"></i></button>
+<div class="formsupporto hidden" id="formsupporto">
+{{ =suppoform }}    
+</div>
+{{ pass }}
+{{ except: }}
+{{ pass }}
