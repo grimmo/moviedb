@@ -1,55 +1,80 @@
 {{extend 'layout.html'}}
-{{=LOAD('default','cerca.load',ajax=True)}}
-<div id="elenco">
-<h1 class="text-center">{{ = film.titolo }} 
-    {{ if film.anno <> 0: }}
-({{= film.anno }})
-    {{ pass }}
-&nbsp;    
+
+<ul class="nav nav-tabs">
+<li class="active"><a href="#home" data-toggle="tab">Home</a></li>
+<li><a href="#cast" data-toggle="tab">Cast</a></li>
+<li><a href="#media" data-toggle="tab">Media</a></li>
+<!-- <li><a href="#settings" data-toggle="tab">Settings</a></li> -->
+</ul>
+<div class="tab-content">
+	<div class="tab-pane active" id="home">
+	<h1 class="text-center">{{ = film.titolo }} 
+    	{{ if film.anno <> 0: }}
+			({{= film.anno }})
+    	{{ pass }}    
+    <span class="pull-right">
     {{ if film.visto: }}
-    <i class="icon-ticket icon-border" title="Hai già visto questo film"></i>
+    	<i class="icon-ticket icon-border btn-success disabled" title="Hai già visto questo film"></i>
     {{ pass }}
-&nbsp;
+	&nbsp;
     {{ if film.masterizzato: }}
-    <i class="icon-save icon-border" title="Questo film è associato a uno o più supporti"></i>
+    	<i class="icon-save icon-border" title="Questo film è associato a uno o più supporti"></i>
     {{ pass }}
-</h1>
-{{ if film.tmdb_id: }}
-<a class="btn" href="#" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" ></i> Aggiorna</a>
-{{ else: }}
-<a class="btn" href="#openModal" onclick="aggiorna_film()" id="tmdbupdate_btn">Aggiorna</a>
-{{ pass }}
-&nbsp;<a class="btn" href="#" onclick="window.location='{{=URL('default','edit',args=film.id)}}'"><i></i> Modifica</a>
-<dt>
-    <dd><strong>Regia:</strong>
-        {{ for persona in cast.find(lambda row: row.ruoli.regista==True): }}    
-    {{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}&nbsp
-{{ pass }}
-</dd>
-<dd><strong>Giudizio:</strong>{{ = film.giudizio_mio }}</dd>
-<dd><strong>Trama:</strong>{{ = film.trama }}</dd>
-<dd><strong>Locandina:</strong><img src="{{ = URL('default','download',args=film.locandina) }}"></dd>
-</dt>
+        </span>
+    </h1>
+    <h1>
+    <small>di&nbsp;
+    {{ for persona in cast.find(lambda row: row.ruoli.regista==True): }}    
+    	{{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}&nbsp
+    {{ pass }}
+    </small>
+    </h1>	   
+    
+    {{ if film.tmdb_id: }}    
+		<a class="btn" href="#" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" ></i> Aggiorna</a>
+	{{ else: }}
+		<a class="btn" href="#openModal" onclick="aggiorna_film()" id="tmdbupdate_btn">Aggiorna</a>
+	{{ pass }}
+	&nbsp;<a class="btn" href="#" onclick="window.location='{{=URL('default','edit',args=film.id)}}'"><i></i> Modifica</a>
+
+    
+	<dl class="horizontal">
+    	<dt>Giudizio:</dt><dd>{{ = film.giudizio_mio }}</dd>
+	</dl>
+	<ul class="media-list">
+		<li class="media">
+			<a class="pull-left" href="#">
+				<img src="{{ = URL('default','download',args=film.locandina) }}" class="media-object">
+			</a>
+			<div class="media-body">
+				<h4 class="media-heading">Trama</h4>
+				<p>{{ = film.trama }}</p>
+			</div>
+		</li>
+	</ul>
+</div>
+<div class="tab-pane" id="cast">
 <h2>Cast</h2>
 <dt>
 {{ for persona in cast.find(lambda row: row.ruoli.regista==False): }}    
     <dd>{{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}</dd>     
 {{ pass }}
 </dt>
-{{ if media: }}
-	<h2>Supporti</h2>
+</div>
+<div class="tab-pane" id="media">	
+    <h1>Media&nbsp;{{ = A(I(_class="icon-plus"),_href=URL('associamedia',vars=dict(film= film.id)),_class="btn btn-primary") }}</h1>
+	{{ if media: }}
 	{{ for supporto in media: }}
-		{{ =supporto }}
-		In formato {{ =supporto.tipo }} su {{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp;
-		{{ if db.supporto[supporto.supporto].id_originale: }}
-			{{ =db.supporto[supporto.supporto].id_originale }}
-		{{ else: }}
-			{{ =db.supporto[supporto.supporto].id }}
-		{{ pass }}
-	{{ pass }}
-{{ else: }}
-<h2> {{ = A('Associa un supporto',_href=URL('associamedia',vars=dict(film= film.id))) }} </h2>
+		{{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp;
+			{{ if db.supporto[supporto.supporto].id_originale: }}
+				{{ =A(db.supporto[supporto.supporto].id_originale,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
+			{{ else: }}
+				{{ =A(db.supporto[supporto.supporto].id,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
+			{{ pass }}
+	&nbsp;({{ =supporto.tipo }})
+	{{ pass }}		
 {{ pass }}
+</div>
 </div>
 <div id="openModal" class="modalDialog">
 <div>
@@ -67,7 +92,8 @@
         $("#tmdbupdate_spinner").addClass("icon-refresh icon-spin");
         $("#tmdbupdate_btn").attr('disabled','disabled');
         //$("#tmdbupdate_btn").text('attendere...')
-        return ajax('/moviedb/tmdb/update_movie_by_id?tmdb_id={{ = film.tmdb_id }}',[],':eval');
+        //return ajax('/moviedb/tmdb/update_movie_by_id?tmdb_id={{ = film.tmdb_id }}',[],':eval');
+        return ajax('/moviedb/default/get_movie_details?tmdb_id={{ =film.tmdb_id }}',[],':eval');
     }
 </script>
 {{ else: }}
@@ -82,7 +108,7 @@
         $.getJSON('/moviedb/tmdb/call/json/find_title?movie_id={{ =film.id }}', function(data) {
 			var titolitrovati = '';
 			$.each(data, function(results) {
-                var ajax_url = '/moviedb/tmdb/update_movie_by_id?tmdb_id='+data[results].id;
+                var ajax_url = '/moviedb/tmdb/get_movie_details?tmdb_id='+data[results].id;
                 titolitrovati = titolitrovati+'<dd><a href="#" onclick="ajax(\'' + ajax_url +'\',[],\':eval\')"><strong>'+data[results].title+'</strong></a>&nbsp;('+data[results].release_date+')</dd>';
 			});
 			$('.TitoliTrovati').html(titolitrovati);

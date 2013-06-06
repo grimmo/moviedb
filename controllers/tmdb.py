@@ -136,9 +136,9 @@ def cerca():
             response_body = urlopen(r).read()
             film_trovati = gluon.contrib.simplejson.loads(response_body)
             risultati = film_trovati['results']
-            return dict(form=form,risultati=risultati,funzione_tmdb='get_movie_details')
+            return dict(form=form,risultati=risultati,funzione_tmdb='fetch_new_movie')
     else:
-            return dict(form=form,risultati=None,funzione_tmdb='get_movie_details')
+            return dict(form=form,risultati=None,funzione_tmdb='fetch_new_movie')
 
 
     
@@ -147,9 +147,9 @@ def get_persondetails(person_id):
     return query_tmdb("http://api.themoviedb.org/3/person/%s" % person_id)
 
 @service.xmlrpc
-def get_movie_poster(movie_id):
+def fetch_movie_poster(tmbd_id):
     base_url,poster_size = tmdb_config()
-    movie_images = query_tmdb("http://api.themoviedb.org/3/movie/%s/images" % movie_id)
+    movie_images = query_tmdb("http://api.themoviedb.org/3/movie/%s/images" % tmbd_id)
     posters_list = movie_images['posters']
     # find the first italian poster
     poster_data = next((x for x in posters_list if x['iso_639_1'] == 'it'), None)
@@ -158,41 +158,78 @@ def get_movie_poster(movie_id):
     # Questo è il path in cui viene salvata la locandina    
     file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
     urlretrieve('%s' % complete_poster_url,file_locandina)
-    #floca = open(file_locandina, 'rb')
-    #floca.close()
-    return dict(result=file_locandina,errors=None)
+    floca = open(file_locandina, 'rb')
+    try:
+        movie = db(db.film.tmdb_id==tmdb_id).select().last().update(**{'locandina':floca})
+    except:
+        errors = "Failed to fetch poster for %s" % tmdb_id
+    else:
+        errors = None
+    finally:
+        floca.close()        
+        return dict(result=file_locandina,errors=errors)
     
 @service.xmlrpc
 def get_movie_details(tmdb_id):        
     #movie_id = session.movie_id   
     movie_data = query_tmdb("http://api.themoviedb.org/3/movie/%s" % tmdb_id)     
     if movie_data:
-        movie_year = strftime('%Y',strptime(movie_data['release_date'],u'%Y-%m-%d'))
-        movie_slug = slugify("%s %s" % (movie_data['title'],movie_year))
-        # shitty validator returns None instead of True field validates
-        if IS_IN_DB(db,'film.slug')(movie_slug)[1] == None:
-            return dict(result=tmdb_id,errors="Movie with slug %s already in database" % movie_slug)
-        else:        
-            poster_query = get_movie_poster(tmdb_id)
-            if not poster_query['errors']:
-                poster_file_path = poster_query['result']
-                poster_file = open(poster_file_path, 'rb')
-                db.film.insert(titolo=movie_data['title'].encode('utf-8'),slug=movie_slug,anno=movie_year,tmdb_id=movie_data['id'],trama=movie_data['overview'],locandina=poster_file)
-                errors = None
-                cast_status = update_cast_details(tmdb_id)
-            else:                
-                db.film.insert(titolo=movie_data['title'].encode('utf-8'),slug=movie_slug,anno=movie_year,tmdb_id=movie_data['id'],trama=movie_data['overview'])
-                errors = "Unable to fetch poster for %s" % movie_data['title'].encode('utf-8')
-                cast_status = update_cast_details(tmdb_id)
-            movie_slug = db(db.film.tmdb_id==tmdb_id).select().last().slug
-            return dict(result=movie_slug,cast=cast_status,errors = errors)
-    
+        movie_data['year'] = strftime('%Y',strptime(movie_data['release_date'],u'%Y-%m-%d'))
+        movie_data['slug'] = slugify("%s %s" % (movie_data['title'],movie_data['year']))        
+        return dict(result=movie_data,errors=None)
     else:
-            return dict(result=None,errors = "Unable to get details for movie %s" % tmdb_id)
-    #
-    #return dict(result=movie_id,cast=cast_status,errors=errors)
-    
+        return dict(result=None,errors = "Unable to get details for movie %s" % tmdb_id) 
 
+@service.xmlrpc        
+def insert_movie(movie_data):    
+    ret = db[db.film].validate_and_insert(**
+    {'titolo':movie_data['title'],'slug':movie_data['slug'],'tmdb_id':movie_data['id'],'anno':movie_data['year'],'trama':movie_data['overview']})
+    if ret.id:
+        errors = None
+        tmdb_id = movie_data['id']
+        movie_slug = db.film[ret.id].slug
+        return dict(result=movie_slug,errors=errors,titolo=movie_data['title'])
+    else:
+        errors = ret
+        return dict(result=None,errors=errors,movie_data=movie_data)
+    
+    #
+    #poster_query = get_movie_poster(tmdb_id)
+    #if not poster_query['errors']:
+    #    poster_file_path = poster_query['result']
+    #    poster_file = open(poster_file_path, 'rb')
+    #    db[db.film].insert(**{'locandina':poster_file})    
+    #    poster_file.close()
+    #    movie_slug = db(db.film.tmdb_id==tmdb_id).select().last().slug
+    #    return dict(result=movie_slug,errors = None)
+    #else:
+    #    errors = "Unable to fetch poster for %s" % movie_data['title']
+    #    
+    #    return dict(result=movie_slug,errors = errors)
+
+#cast_status = update_cast_details(tmdb_id)
+#cast_status = update_cast_details(tmdb_id)
+
+@service.xmlrpc        
+def update_movie(id,movie_data):
+    db(db[film]._id==id).update(**{'titolo':movie_data['title'].encode('utf-8')})
+    db(db[film]._id==id).update(**{'slug':movie_data['slug']})
+    db(db[film]._id==id).update(**{'anno':movie_data['year']})
+    db(db[film]._id==id).update(**{'trama':movie_data['overview']})
+    db(db[film]._id==id).update(**{'anno':movie_data['year']})
+    db(db[film]._id==id).update(**{'tmdb_id':movie_data['id']})
+    tmdb_id = movie_data['id']
+    poster_query = get_movie_poster(tmdb_id)
+    if not poster_query['errors']:
+        poster_file_path = poster_query['result']
+        poster_file = open(poster_file_path, 'rb')
+        db(db[film]._id==id).update(**{'locandina':poster_file})    
+        return dict(result=movie_slug,errors = None)
+    else:
+        errors = "Unable to fetch poster for %s" % movie_data['title'].encode('utf-8')
+        movie_slug = db(db.film.tmdb_id==tmdb_id).select().last().slug
+        return dict(result=movie_slug,errors = errors)
+        
 @service.json
 def find_title():
      film = db.film[request.vars.movie_id]

@@ -139,7 +139,7 @@ db.define_table('film',
      Field('nota','text'),
      Field('trama','text'),
      Field('adulti','boolean',default=False),
-     Field('tmdb_id','string'),
+     Field('tmdb_id','string',unique=True),
      Field('id_originale','string')   
 )
      
@@ -174,6 +174,7 @@ db.formato.supporto.requires = IS_IN_DB(db,db.supporto.id,lambda r: "%s n. %s" %
 db.tags.slug.requires = IS_SLUG(check=False)
 db.moviecast.slug.requires = IS_SLUG(check=False)
 db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
+db.film.tmdb_id.requires = IS_NOT_IN_DB(db,'film.tmdb_id')
 db.film.titolo.represent = lambda value,row:     A("%s (%s)" % (value,db.film(db.film.titolo==value).anno),_href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
 persone_e_film = db((db.film.id==db.ruoli.film)         & (db.moviecast.id ==db.ruoli.persona))
 #LEFT OUTER JOIN

@@ -1,6 +1,6 @@
 {{ for film in risultati_film: }}
-    <li>{{= film }}</li>
-    {{ pass }}
-    {{ for attore in risultati_attori: }}
-    <li>{{= attore }}</li>
-    {{ pass }}
+	<li>{{ =A(film.titolo,_href=URL('default','film.html',args=film.slug),_target="_new") }}</li>
+{{ pass }}
+{{ for attore in risultati_attori: }}
+	<li>{{=A(attore.nome,_href=URL('default','persona',args=attore.slug),_target="_new") }}</li>
+{{ pass }}

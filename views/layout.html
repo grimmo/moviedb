@@ -69,29 +69,48 @@
 
 <body>
   <!-- Navbar ================================================== -->  
-  <div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="flash">{{=response.flash or ''}}</div>
-    <div class="navbar-inner">
-      <div class="container">
-        <!-- the next tag is necessary for bootstrap menus, do not remove -->
-        <!--
-        <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>        
-	{{=response.logo or ''}}
-        <ul id="navbar" class="nav pull-right">{{='auth' in globals() and auth.navbar(mode="dropdown") or ''}}</ul>
-        <div class="nav-collapse">
-          {{is_mobile=request.user_agent().is_mobile}}
-          {{if response.menu:}}
-          {{=MENU(response.menu, _class='mobile-menu nav' if is_mobile else 'nav',mobile=is_mobile,li_class='dropdown',ul_class='dropdown-menu')}}
-          {{pass}}          
-          -->
-        </div><!--/.nav-collapse -->
-      </div>
+  <div class="navbar navbar-inverse navbar-fixed-top">    
+    <div class='navbar-inner'>
+        <div class='container'>
+            <a class='brand' href="/moviedb">MovieDB</a>                        
+            <form id="formricerca" class="navbar-search" onsubmit="return false;">
+            <input type="hidden" name="_formname" value="cercaform" />                                        
+            <li class="nav dropdown">
+            <a class="dropdown-toggle" id="dLabel" role="button" data-toggle="dropdown" data-target="#">
+            <input id="chiavericerca" name="slug" type="text" class="search-query span3" placeholder="Cerca" autocomplete="off">
+            <b class="caret"></b>
+                <div class="icon-search"></div>            
+                </a>                
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel" id="risultati_ricerca"></ul>
+                </li>            
+            </form>            
+            <li class='nav dropdown'>                
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                    <i class="icon-plus-sign icon-2x"></i>                   
+                </a>
+                <ul class="dropdown-menu">
+                <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">Fetch new movie</a></li>
+                <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">Add new media</a></li>
+            </ul>
+            </li>
+        </div>
     </div>
-  </div><!--/top navbar -->
+</div>     
+{{ try: }}
+	{{ if risultati_film: }}    	    	
+	<div id="risultati" class="alert">    
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+    		{{=risultati_film}}        
+	</div>
+	{{ elif risultati_attori: }}
+    <div id="risultati" class="alert">    
+    	<button type="button" class="close" data-dismiss="alert">&times;</button>	    	
+    		{{=risultati_attori}}
+	</div>
+	{{ pass }} 
+{{ except: }}
+    {{ pass }}
+  <!--/top navbar -->
 
   <div class="container">
     <!-- Masthead ================================================== -->
@@ -158,7 +177,17 @@
       <script src="{{=URL('static','js/dd_belatedpng.js')}}"></script>
       <script> DD_belatedPNG.fix('img, .png_bg'); //fix any <img> or .png_bg background-images </script>
       <![endif]-->
-  
+  <script>
+  $(document).ready(function() {   
+  $('#formricerca').live("submit", function() {
+  $.post("/moviedb/default/cerca", $("#formricerca").serialize())
+  .done(function(data) {      
+  $('.dropdown-toggle').dropdown();  
+  $('#risultati_ricerca').html(data);                    
+  });        
+  });
+  });
+  </script>
   {{if response.google_analytics_id:}}
   <script src="{{=URL('static','js/analytics.js')}}"></script>
   <script type="text/javascript">
@@ -166,7 +195,16 @@
     'Google Analytics':{trackingId:'{{=response.google_analytics_id}}'} 
   });</script>
   {{pass}}
-  <script src="{{=URL('static','js/share.js',vars=dict(static=URL('static','images')))}}"></script>
-  <script src="{{=URL('static','js/bootstrap-typeahead.js')}}"></script>  
+  <!-- <script>
+$(document).ready(function() {
+	$('#chiavericerca input').typeahead({
+  		source: '/moviedb/default/call/json/ajaxsearch'
+	});
+   
+});
+</script> 
+<script src="{{=URL('static','js/share.js',vars=dict(static=URL('static','images')))}}"></script>
+-->
+<script src="{{=URL('static','js/bootstrap-typeahead.js')}}"></script>  
 </body>
 </html>

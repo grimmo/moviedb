@@ -55,8 +55,8 @@ def cerca():
     form=SQLFORM(db.film,db.moviecast,fields=['slug'])        
     if form.vars.slug != "" and form.validate(session=None, formname='cercaform'):        
         chiave = form.vars.slug        
-        risultati_film = db(db.film.slug.contains(chiave)).select(db.film.titolo)
-        risultati_attori = db(db.moviecast.slug.contains(chiave)).select(db.moviecast.nome)
+        risultati_film = db(db.film.slug.contains(chiave)).select()
+        risultati_attori = db(db.moviecast.slug.contains(chiave)).select()
         return dict(risultati_film=risultati_film,risultati_attori=risultati_attori)        
     elif form.errors:
         response.flash = 'Form haz errors'
@@ -65,7 +65,14 @@ def cerca():
         
 @service.json  
 def ajaxsearch():
-    return dict(val=[{'id': 1,'name':'Giovanni','surname':'Ribisi'}])
+    #return dict(options=[dict(id=1, name= 'Terry'), dict(id= 2, name= 'Mark'), dict(id= 3, name= 'Jacob')])
+    return dict(source=[{'id': 1, 'name': 'Terry'},
+ {'id': 2, 'name': 'Mark'},
+ {'id': 3, 'name': 'Jacob'}])
+    #[dict(id=1,name='Terry'),dict(id=2,name='Mark'),dict(id=3,name='Jacob')]
+    ##options=[{ 'id': 1, 'name': 'Terry'}, { 'id': 2, 'name': 'Mark'}, { 'id': 3, 'name': 'Jacob'}])
+    
+    
 '''
 def ajaxsearch():    
     form=SQLFORM(db.film,db.moviecast,fields=['slug'])        
@@ -194,19 +201,61 @@ def get_movie_poster():
     else:
         raise HTTP(404,'Did not specify themoviedb id')
         
-def get_movie_details():
-    tmdb_id = request.vars.tmdb_id
-    if tmdb_id:
-        response = tmdb_service.get_movie_details(tmdb_id)
-        if not response['errors'] and not response['cast']['errors']:
-            return redirect(URL('default','film',args=(response['result'])))
-        elif not response['errors']:
-            session.flash = (response['cast']['errors'])
-            return redirect(URL('moviedb','default','film',args=(response['result'])))
+def fetch_new_movie():
+     if request.vars.tmdb_id == "":
+        session.flash = 'Missing movie id to be fetched'
+        return dict(movie='Missing movie id')
+     else:
+        tmdb_id = request.vars.tmdb_id
+        movie_details = tmdb_service.get_movie_details(tmdb_id)
+        if movie_details['errors']:
+            return dict(result=None,errors='Unable to fetch details for movie %s' % tmdb_id)           
         else:
-            raise HTTP(500,response['errors'])
+            movie_details = movie_details['result']
+            insert_response = tmdb_service.insert_movie(movie_details)
+        if insert_response['errors']:
+            movie_fetched = False
+            return dict(result=None,errors=insert_response['errors'],movie_data=insert_response['movie_data'])
+        else:
+            movie_fetched = True
+            poster_file = tmdb_service.fetch_movie_poster(tmdb_id)                
+            if poster_file.has_key('errors') and poster_file['errors']:
+                poster_fetched = False
+            else:
+                poster_fetched = True
+                cast_response = tmdb_service.update_cast_details(tmdb_id)
+                if cast_response['errors']:
+                    cast_fetched = False
+                else:
+                    cast_fetched = True
+                return dict(result={'movie':movie_fetched,'poster':poster_fetched,'cast':cast_fetched})
+                
+            
+        
+def get_movie_details():
+    movie_id = session.movie_id
+    if movie_id == "":
+        raise HTTP(404,'Did not specify movie id')
     else:
-        raise HTTP(404,'Did not specify themoviedb id')
+        tmdb_id = request.vars.tmdb_id
+        if tmdb_id == "":
+            # If we are not passed tmdb_id explicitly, we should be sure
+            # the movie has already been updated from tmdb at least once.
+            # 
+            tmdb_id = db.film[movie_id].tmdb_id        
+            movie_details = tmdb_service.get_movie_details(tmdb_id)
+        if movie_details.has_key('slug') and db(db.film.tmdb_id==tmdb_id).select().last().slug == movie_details['slug']:
+            # same slug, let's update
+            response = tmdb_service.update_movie(movie_id,movie_details)
+        else:
+            # no or different slug, this is an insert
+            response = tmdb_service.insert_movie(movie_details)        
+            if not response['errors'] and not response['cast']['errors']:                
+                return redirect(URL('moviedb','default','film',args=(response['result'])))
+            else:                                
+                session.flash = (response['errors'])
+                return redirect(URL('moviedb','default','film',args=(response['result'])))
+            
         
 
 # Funzione da usare solo per la migrazione da dbfilm django

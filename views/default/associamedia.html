@@ -1,5 +1,4 @@
 {{extend 'layout.html'}}
-{{=LOAD('default','cerca.load',ajax=True)}}
 <h1>Add new media to {{ =A("%s (%s)" %(db.film[session.movie_id].titolo,db.film[session.movie_id].anno),_href=URL('default','film',args=db.film[session.movie_id].slug)) }}</h1>
 {{ =form }}
 {{ try: }}

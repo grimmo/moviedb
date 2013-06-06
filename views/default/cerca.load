@@ -51,32 +51,22 @@ even if the function is called via ajax.
         </div>
     </div>
 </div>     
-    	{{ if risultati_film: }}    	    	
-        <div id="risultati" class="alert">    
-        	<button type="button" class="close" data-dismiss="alert">&times;</button>
+{{ if risultati_film: }}    	    	
+	<div id="risultati" class="alert">    
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
     		{{=risultati_film}}        
-		</div>
-    	{{ elif risultati_attori: }}
-    	<div id="risultati" class="alert">    
-    		<button type="button" class="close" data-dismiss="alert">&times;</button>	    	
+	</div>
+{{ elif risultati_attori: }}
+    <div id="risultati" class="alert">    
+    	<button type="button" class="close" data-dismiss="alert">&times;</button>	    	
     		{{=risultati_attori}}
-		</div>
-    	{{ pass }}    	
+	</div>
+{{ pass }}    	
 <script>
-
-    $(document).ready(function() {
-    $('#chiavericerca input').typeahead({
-  source: '/moviedb/default/call/json/ajaxsearch'
-});
+$(document).ready(function() {
+	$('#chiavericerca input').typeahead({
+  		source: '/moviedb/default/call/json/ajaxsearch'
+	});
    
-   });
-
-    //function cerca(chiave)
-    //{
-    //$.post('cerca.json', {'chiave': chiave },
-    //function(data) {     
-    //$('#risultati').text(data);
-    ////display_risultati(data)
-    // });
-    //}
+});
 </script>
