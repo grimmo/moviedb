@@ -193,23 +193,23 @@ def associamedia():
 def get_movie_poster():
     tmdb_id = request.vars.tmdb_id
     if tmdb_id:
-        response = tmdb_service.get_movie_poster(tmdb_id)
-        if not response['errors']:
-            return response['result']
+        response = tmdb_service.fetch_movie_poster(tmdb_id)
+        if response.has_key('errors') and response['errors']:
+            return dict(result=response['errors'])
         else:
-            raise HTTP(500,response['errors'])
+            redirect(URL('moviedb','default','film.html',args=db(db.film.tmdb_id==tmdb_id).select().last().slug))
     else:
         raise HTTP(404,'Did not specify themoviedb id')
         
 def fetch_new_movie():
-     if request.vars.tmdb_id == "":
+     tmdb_id = request.vars.tmdb_id
+     if tmdb_id == "":
         session.flash = 'Missing movie id to be fetched'
         return dict(movie='Missing movie id')
-     else:
-        tmdb_id = request.vars.tmdb_id
+     else:        
         movie_details = tmdb_service.get_movie_details(tmdb_id)
         if movie_details['errors']:
-            return dict(result=None,errors='Unable to fetch details for movie %s' % tmdb_id)           
+            return dict(result=None,errors='Unable to fetch details for movie')
         else:
             movie_details = movie_details['result']
             insert_response = tmdb_service.insert_movie(movie_details)
@@ -217,12 +217,12 @@ def fetch_new_movie():
             movie_fetched = False
             return dict(result=None,errors=insert_response['errors'],movie_data=insert_response['movie_data'])
         else:
-            movie_fetched = True
+            movie_fetched = True                        
             poster_file = tmdb_service.fetch_movie_poster(tmdb_id)                
             if poster_file.has_key('errors') and poster_file['errors']:
                 poster_fetched = False
             else:
-                poster_fetched = True
+                poster_fetched = True                
                 cast_response = tmdb_service.update_cast_details(tmdb_id)
                 if cast_response['errors']:
                     cast_fetched = False
@@ -230,8 +230,6 @@ def fetch_new_movie():
                     cast_fetched = True
                 return dict(result={'movie':movie_fetched,'poster':poster_fetched,'cast':cast_fetched})
                 
-            
-        
 def get_movie_details():
     movie_id = session.movie_id
     if movie_id == "":

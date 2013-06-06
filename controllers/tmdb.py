@@ -27,10 +27,6 @@ def call():
 def slugify(text):
     return IS_SLUG(check=False)(text.encode('utf-8'))[0]
 
-
-def to_slug():
-    return slugify(request.vars.slug)
-
 def tmdb_config():
     headers = {"Accept": "application/json"}
     data = {'api_key': THEMOVIEDB_API_KEY}
@@ -147,27 +143,29 @@ def get_persondetails(person_id):
     return query_tmdb("http://api.themoviedb.org/3/person/%s" % person_id)
 
 @service.xmlrpc
-def fetch_movie_poster(tmbd_id):
+def fetch_movie_poster(tmdb_id):    
     base_url,poster_size = tmdb_config()
-    movie_images = query_tmdb("http://api.themoviedb.org/3/movie/%s/images" % tmbd_id)
+    movie_images = query_tmdb("http://api.themoviedb.org/3/movie/%s/images" % tmdb_id)
     posters_list = movie_images['posters']
     # find the first italian poster
     poster_data = next((x for x in posters_list if x['iso_639_1'] == 'it'), None)
     file_path = poster_data['file_path']    
+    session.flash = file_path
     complete_poster_url='%s/%s/%s' % (base_url,poster_size,file_path)    
     # Questo è il path in cui viene salvata la locandina    
     file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
     urlretrieve('%s' % complete_poster_url,file_locandina)
     floca = open(file_locandina, 'rb')
+    errors = None
     try:
-        movie = db(db.film.tmdb_id==tmdb_id).select().last().update(**{'locandina':floca})
+        movie = db(db.film.tmdb_id==tmdb_id).select().last().update_record(locandina = floca)
     except:
-        errors = "Failed to fetch poster for %s" % tmdb_id
-    else:
-        errors = None
-    finally:
         floca.close()        
-        return dict(result=file_locandina,errors=errors)
+        raise
+        errors = "Failed to fetch poster for %s" % tmdb_id        
+        return dict(result=None,errors=errors)
+    floca.close()        
+    return dict(result=file_locandina,errors=errors)
     
 @service.xmlrpc
 def get_movie_details(tmdb_id):        
