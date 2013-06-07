@@ -9,11 +9,11 @@
 ## - call exposes all registered services (none by default)
 #########################################################################
 import xmlrpclib
-tmdb_service = xmlrpclib.ServerProxy(URL('moviedb','tmdb','call',args='xmlrpc',scheme=True,host=True))
+tmdb_service = xmlrpclib.ServerProxy(URL('moviedb','tmdb','call',args='xmlrpc',scheme=True,host=True),allow_none=True)
 
 
 def index():
-    session.forget()
+    #session.forget()
     film = db(db.film.id>0).select(db.film.titolo,db.film.anno,orderby=[db.film.titolo,db.film.anno])
     return dict(film=film)   
 
@@ -115,7 +115,7 @@ def film():
     c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.slug,db.ruoli.regista)
     m = db(db.formato.film == f.id).select()
     session.movie_id = f.id  
-    return dict(film=f,cast=c,media=m,session=session)
+    return dict(film=f,cast=c,media=m)
 
 def edit():    
     return dict(form=crud.update(db.film, request.args(0)))   
@@ -189,7 +189,13 @@ def associamedia():
         return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id))
     else:
         return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id),suppoform=crud.create(db.supporto,next='associamedia',fields=['tipo','collocazione'],onaccept=on_accept_suppoform))
+
+def status():
+    return dict(request=request, session=session, response=response)
     
+def create_session(request):
+    return session.connect(request,response,cookie_key='sucaminchia',compression_level=None)
+
 def get_movie_poster():
     tmdb_id = request.vars.tmdb_id
     if tmdb_id:
@@ -201,35 +207,38 @@ def get_movie_poster():
     else:
         raise HTTP(404,'Did not specify themoviedb id')
         
-def fetch_new_movie():
-     tmdb_id = request.vars.tmdb_id
-     if tmdb_id == "":
-        session.flash = 'Missing movie id to be fetched'
-        return dict(movie='Missing movie id')
-     else:        
-        movie_details = tmdb_service.get_movie_details(tmdb_id)
-        if movie_details['errors']:
-            return dict(result=None,errors='Unable to fetch details for movie')
-        else:
-            movie_details = movie_details['result']
-            insert_response = tmdb_service.insert_movie(movie_details)
-        if insert_response['errors']:
-            movie_fetched = False
-            return dict(result=None,errors=insert_response['errors'],movie_data=insert_response['movie_data'])
-        else:
-            movie_fetched = True                        
-            poster_file = tmdb_service.fetch_movie_poster(tmdb_id)                
-            if poster_file.has_key('errors') and poster_file['errors']:
-                poster_fetched = False
-            else:
-                poster_fetched = True                
-                cast_response = tmdb_service.update_cast_details(tmdb_id)
-                if cast_response['errors']:
-                    cast_fetched = False
-                else:
-                    cast_fetched = True
-                return dict(result={'movie':movie_fetched,'poster':poster_fetched,'cast':cast_fetched})
-                
+def fetch_new_movie():      
+    tmdb_id = request.vars.tmdb_id
+    if tmdb_id == "":
+       raise HTTP(404,'Missing movie id')       
+    else:        
+       movie_details = tmdb_service.get_movie_details(tmdb_id)       
+       if movie_details['errors'] or not movie_details['result']:
+           return dict(result=None,errors='Unable to fetch details for movie')
+       else:
+           movie_details = movie_details['result']           
+           insert_response = tmdb_service.insert_movie(movie_details)               
+       if insert_response['errors']:
+           movie_fetched = False
+           return dict(result="",errors=insert_response['errors'],movie_data=insert_response['movie_data'])
+       else:           
+           movie_fetched = True                          
+           session.movie_id = insert_response['result']
+           poster_file = tmdb_service.fetch_movie_poster(tmdb_id)                                      
+           if poster_file.has_key('errors') and poster_file['errors']:
+               poster_fetched = False
+           else:
+               poster_fetched = True                
+               cast_response = tmdb_service.update_cast_details(tmdb_id)                              
+               if cast_response['errors']:
+                   cast_fetched = False
+               else:
+                   cast_fetched = True      
+               session.brandnew = movie_fetched                           
+               session.poster_fetched = poster_fetched
+               session.cast_fetched = cast_fetched
+               redirect(URL('moviedb','default','film',args=db.film[session.movie_id].slug))
+              
 def get_movie_details():
     movie_id = session.movie_id
     if movie_id == "":

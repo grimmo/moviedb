@@ -195,6 +195,7 @@
 'Rows selected': 'Righe selezionate',
 'Save profile': 'Save profile',
 'Search': 'Search',
+'Seleziona per cancellare': 'Seleziona per cancellare',
 'Semantic': 'Semantic',
 'Services': 'Services',
 'Size of cache:': 'Size of cache:',

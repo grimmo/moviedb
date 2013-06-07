@@ -44,7 +44,7 @@ def query_tmdb(api_url):
 
 
 @service.xmlrpc
-def update_cast_details(tmdb_id):    
+def update_cast_details(tmdb_id,sessione=None):    
     movie_id = db(db.film.tmdb_id == tmdb_id).select().first().id    
     cast_details = query_tmdb("http://api.themoviedb.org/3/movie/%s/casts" % tmdb_id)
     roles_list = []
@@ -70,12 +70,12 @@ def update_cast_details(tmdb_id):
                 roles_list.append(dict(nome=p.nome,id=p.id,movie_id=movie_id,is_director=True))
             else:
                 errors.append('Failed to add %s as director' % director['name'])                            
-    return dict(result=roles_list,errors=errors)
-                
+    return dict(result=roles_list,errors=errors,sessione=sessione)
+"""                
 def update_movie_by_id():
     # tmdb_id viene passato come parametro nella url
     tmdb_id = request.vars.tmdb_id
-    # l'id del film invece deve già essere una variabile di sessione
+    # l'id del film invece deve già essere una variabile di     sessione
     movie_id = session.movie_id
     headers = {"Accept": "application/json"}
     data = {'api_key': THEMOVIEDB_API_KEY,'language':'it'}
@@ -121,6 +121,7 @@ def update_movie_by_id():
                     #db(db.moviecast.tmdb_id==persona['id']).validate_and_update(slug=persona['name'].encode('utf-8'))
                     db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)
         return 'document.location = "%s";' % URL('default', 'film', args=[f.id])
+"""
 
 def cerca():
     form=FORM('Titolo:', INPUT(_name='titolotext'), INPUT(_type='submit'))
@@ -149,8 +150,7 @@ def fetch_movie_poster(tmdb_id):
     posters_list = movie_images['posters']
     # find the first italian poster
     poster_data = next((x for x in posters_list if x['iso_639_1'] == 'it'), None)
-    file_path = poster_data['file_path']    
-    session.flash = file_path
+    file_path = poster_data['file_path']        
     complete_poster_url='%s/%s/%s' % (base_url,poster_size,file_path)    
     # Questo è il path in cui viene salvata la locandina    
     file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
@@ -168,8 +168,7 @@ def fetch_movie_poster(tmdb_id):
     return dict(result=file_locandina,errors=errors)
     
 @service.xmlrpc
-def get_movie_details(tmdb_id):        
-    #movie_id = session.movie_id   
+def get_movie_details(tmdb_id):            
     movie_data = query_tmdb("http://api.themoviedb.org/3/movie/%s" % tmdb_id)     
     if movie_data:
         movie_data['year'] = strftime('%Y',strptime(movie_data['release_date'],u'%Y-%m-%d'))
@@ -180,34 +179,16 @@ def get_movie_details(tmdb_id):
 
 @service.xmlrpc        
 def insert_movie(movie_data):    
-    ret = db[db.film].validate_and_insert(**
-    {'titolo':movie_data['title'],'slug':movie_data['slug'],'tmdb_id':movie_data['id'],'anno':movie_data['year'],'trama':movie_data['overview']})
+    ret = db[db.film].validate_and_insert(**    {'titolo':movie_data['title'],'slug':movie_data['slug'],'tmdb_id':movie_data['id'],'anno':movie_data['year'],'trama':movie_data['overview']})
     if ret.id:
-        errors = None
+        errors = ""
         tmdb_id = movie_data['id']
         movie_slug = db.film[ret.id].slug
-        return dict(result=movie_slug,errors=errors,titolo=movie_data['title'])
+        return dict(result=str(ret.id),errors=errors,movie_data=movie_data)
     else:
         errors = ret
-        return dict(result=None,errors=errors,movie_data=movie_data)
-    
-    #
-    #poster_query = get_movie_poster(tmdb_id)
-    #if not poster_query['errors']:
-    #    poster_file_path = poster_query['result']
-    #    poster_file = open(poster_file_path, 'rb')
-    #    db[db.film].insert(**{'locandina':poster_file})    
-    #    poster_file.close()
-    #    movie_slug = db(db.film.tmdb_id==tmdb_id).select().last().slug
-    #    return dict(result=movie_slug,errors = None)
-    #else:
-    #    errors = "Unable to fetch poster for %s" % movie_data['title']
-    #    
-    #    return dict(result=movie_slug,errors = errors)
-
-#cast_status = update_cast_details(tmdb_id)
-#cast_status = update_cast_details(tmdb_id)
-
+        return dict(result="",errors=errors,movie_data=movie_data)
+        
 @service.xmlrpc        
 def update_movie(id,movie_data):
     db(db[film]._id==id).update(**{'titolo':movie_data['title'].encode('utf-8')})

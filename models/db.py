@@ -130,7 +130,7 @@ db.define_table('film',
      Field('anno','integer'),
      Field('slug','string',unique=True),
      Field('visto','boolean',default=False),
-     Field('masterizzato','boolean',default=False),
+     #Field('masterizzato','boolean',default=False),
      Field('datacreazione','datetime',default=now),
      Field('datamodifica','datetime',default=now),
      Field('scheda_cinematografo','string'),
@@ -140,8 +140,8 @@ db.define_table('film',
      Field('trama','text'),
      Field('adulti','boolean',default=False),
      Field('tmdb_id','string',unique=True),
-     Field('id_originale','string')   
-)
+     Field('id_originale','string'),  
+     )
      
 db.define_table('ruoli',
      Field('film','reference film'),
@@ -183,3 +183,5 @@ persone_e_film = db((db.film.id==db.ruoli.film)         & (db.moviecast.id ==db.
 film_e_supporti = db((db.film.id==db.formato.film)         & (db.supporto.id ==db.formato.supporto))
 db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).slug,extension='html'))
 film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))
+
+#db.film.masterizzato = Field.Method(lambda row:row.item.id.belongs(db()._select(db.ruoli.film)))
