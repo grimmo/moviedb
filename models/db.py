@@ -129,8 +129,7 @@ db.define_table('film',
      Field('titolo','string'),     
      Field('anno','integer'),
      Field('slug','string',unique=True),
-     Field('visto','boolean',default=False),
-     #Field('masterizzato','boolean',default=False),
+     Field('visto','boolean',default=False),     
      Field('datacreazione','datetime',default=now),
      Field('datamodifica','datetime',default=now),
      Field('scheda_cinematografo','string'),
@@ -177,11 +176,9 @@ db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
 db.film.tmdb_id.requires = IS_NOT_IN_DB(db,'film.tmdb_id')
 db.film.titolo.represent = lambda value,row:     A("%s (%s)" % (value,db.film(db.film.titolo==value).anno),_href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
 persone_e_film = db((db.film.id==db.ruoli.film)         & (db.moviecast.id ==db.ruoli.persona))
-#LEFT OUTER JOIN
-#people_and_movies=db().select(db.film.ALL, db.ruoli.ALL,left=db.ruoli.on(db.film.id==db.ruoli.id))
-#db.film.registi = Field.Virtual(lambda row: [directors for directors in people_and_movies((db.ruoli.film==row.film.id)&(db.ruoli.regista ==True))])
 film_e_supporti = db((db.film.id==db.formato.film)         & (db.supporto.id ==db.formato.supporto))
 db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).slug,extension='html'))
 film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))
-
-#db.film.masterizzato = Field.Method(lambda row:row.item.id.belongs(db()._select(db.ruoli.film)))
+db.film.masterizzato = Field.Method(lambda row: db((db.film.id == row.film.id) & (db.formato.film == row.film.id)).count() > 0)
+db.film.registi = Field.Method(lambda row: [directors for directors in db((db.ruoli.film == row.film.id) & (db.ruoli.regista == True) & (db.moviecast.id == db.ruoli.persona)).select(db.moviecast.nome,db.moviecast.slug)])
+db.film.cast = Field.Method(lambda row: [directors for directors in db((db.ruoli.film == row.film.id) & (db.ruoli.regista == False) & (db.moviecast.id == db.ruoli.persona)).select(db.moviecast.nome,db.moviecast.slug)])
