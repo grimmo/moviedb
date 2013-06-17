@@ -69,63 +69,49 @@
 
 <body>
   <!-- Navbar ================================================== -->  
-  <div class="navbar navbar-inverse navbar-fixed-top">    
+  <div class="navbar navbar-inverse navbar-fixed-top">
     <div class='navbar-inner'>
         <div class='container'>
-            <a class='brand' href="/moviedb">MovieDB</a>                        
-            <form id="formricerca" class="navbar-search" onsubmit="return false;">
-            <input type="hidden" name="_formname" value="cercaform" />                                        
-            <li class="nav dropdown">
-            <a class="dropdown-toggle" id="dLabel" role="button" data-toggle="dropdown" data-target="#">
-            <input id="chiavericerca" name="slug" type="text" class="search-query span3" placeholder="Cerca" autocomplete="off">
-            <b class="caret"></b>
-                <div class="icon-search"></div>            
-                </a>                
-            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel" id="risultati_ricerca"></ul>
-                </li>            
-            </form>            
-            <li class='nav dropdown'>                
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                    <i class="icon-plus-sign icon-2x"></i>                   
-                </a>
-                <ul class="dropdown-menu">
+            <li class="nav dropdown">            
+            <a class="brand dropdown-toggle" id="dropdownlogo" role="button" data-toggle="dropdown" data-target="#" href="{{=URL('index')}}">{{=request.application }}
+            <b class="caret hidden-phone"></b>
+            </a>            
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownlogo">
                 <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">Fetch new movie</a></li>
                 <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">Add new media</a></li>
             </ul>
             </li>
+            <li class="nav dropdown">
+            <form id="formricerca" class="navbar-search" onsubmit="return false;">
+            <input type="hidden" name="_formname" value="cercaform" />            
+            	<a class="dropdown-toggle" id="dLabel" role="button" data-toggle="dropdown" data-target="#">   
+            	<div class="input-prepend">
+				<span class="add-on"><i class="icon-search icon-black"></i></span>
+				<input id="chiavericerca" name="slug" type="text" class="span2" placeholder="" autocomplete="off">            	                    			
+                    </div>
+                </a>             
+            	<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel" id="risultati_ricerca"></ul>
+            </form>            
+            </li>                     
         </div>
     </div>
 </div>     
-{{ try: }}
-	{{ if risultati_film: }}    	    	
-	<div id="risultati" class="alert">    
-		<button type="button" class="close" data-dismiss="alert">&times;</button>
-    		{{=risultati_film}}        
-	</div>
-	{{ elif risultati_attori: }}
-    <div id="risultati" class="alert">    
-    	<button type="button" class="close" data-dismiss="alert">&times;</button>	    	
-    		{{=risultati_attori}}
-	</div>
-	{{ pass }} 
-{{ except: }}
-    {{ pass }}
-  <!--/top navbar -->
-
-  <div class="container">
+<!--/top navbar -->
+<div class="container">
     <!-- Masthead ================================================== -->
+    <!--
     <header class="mastheader row" id="header">
         <div class="span12">
-            <!-- <div class="page-header">                
+            <div class="page-header">                
                 <h1>
                     {{=response.title or request.application }}                     
                     <small>{{=response.subtitle or ''}}</small>
-                </h1>                
-            </div>
-            -->
+                </h1>
+            </div>            
         </div>
     </header>
-
+    -->
+    <!-- <div class="page-header"></div> -->
     <section id="main" class="main row">
         {{if left_sidebar_enabled:}}
         <div class="span3 left-sidebar">
@@ -204,7 +190,6 @@ $(document).ready(function() {
 });
 </script> 
 <script src="{{=URL('static','js/share.js',vars=dict(static=URL('static','images')))}}"></script>
--->
-<script src="{{=URL('static','js/bootstrap-typeahead.js')}}"></script>  
+<script src="{{=URL('static','js/bootstrap-typeahead.js')}}"></script>  -->
 </body>
 </html>
