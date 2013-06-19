@@ -71,16 +71,8 @@
   <!-- Navbar ================================================== -->  
   <div class="navbar navbar-inverse navbar-fixed-top">
     <div class='navbar-inner'>
-        <div class='container'>
-            <li class="nav dropdown">            
-            <a class="brand dropdown-toggle" id="dropdownlogo" role="button" data-toggle="dropdown" data-target="#" href="{{=URL('index')}}">{{=request.application }}
-            <b class="caret hidden-phone"></b>
-            </a>            
-            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownlogo">
-                <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">Fetch new movie</a></li>
-                <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">Add new media</a></li>
-            </ul>
-            </li>
+        <a class="brand" href="{{=URL('default','index')}}">MovieDB</a>
+        <div class='container'>                       
             <li class="nav dropdown">
             <form id="formricerca" class="navbar-search" onsubmit="return false;">
             <input type="hidden" name="_formname" value="cercaform" />            
@@ -93,6 +85,15 @@
             	<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel" id="risultati_ricerca"></ul>
             </form>            
             </li>                     
+             <li class="nav dropdown">             
+            <a class="dropdown-toggle" id="dropdownlogo" role="button" data-toggle="dropdown" data-target="#" href="#">
+            <i class="icon-plus-sign hidden-phone"></i>
+            </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownlogo">
+                <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">Fetch new movie</a></li>
+                <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">Add new media</a></li>
+            </ul>
+            </li>
         </div>
     </div>
 </div>     

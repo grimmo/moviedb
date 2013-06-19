@@ -115,6 +115,7 @@ def film():
     c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.slug,db.ruoli.regista)
     m = db(db.formato.film == f.id).select()
     session.movie_id = f.id  
+    response.title = "%s - %s" % (request.application,f.titolo)
     return dict(film=f,cast=c,media=m)
 
 def edit():    
@@ -167,6 +168,21 @@ def persona():
     
 def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
+    
+def movieselect():
+    return dict()
+    
+def movie_selector():
+    if not request.vars.month: return ''
+    #months = ['January', 'February', 'March', 'April', 'May','June', 'July', 'August', 'September' ,'October', 'November', 'December']
+    month_start = request.vars.month.capitalize()
+    pattern = request.vars.month.capitalize() + '%'
+    selected = [(row.slug,row.titolo) for row in db(db.film.titolo.like(pattern)).select()]    
+    return DIV(*[DIV(tit,
+                     _onclick="jQuery('#month').val('%s')" % sl,
+                     _onmouseover="this.style.backgroundColor='yellow'",
+                     _onmouseout="this.style.backgroundColor='white'"
+                     ) for sl,tit in selected])
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)

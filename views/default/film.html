@@ -1,9 +1,9 @@
 {{extend 'layout.html'}}
 <div class="page-header">
-<ul class="nav nav-tabs">
+<ul class="nav nav-tabs" id="miomenu">
 <li class="active"><a href="#home" data-toggle="tab">Home</a></li>
 <li><a href="#cast" data-toggle="tab">Cast</a></li>
-<li><a href="#media" data-toggle="tab">Media</a></li>
+<li><a href="#media" data-toggle="tab" id="mediatab">Media</a></li>
 <!-- <li><a href="#settings" data-toggle="tab">Settings</a></li> -->
 </ul>
 </div>
@@ -25,30 +25,11 @@
     </dl>
 	</div>
 {{ pass }}        
-<div class="tab-content">
-	<div class="tab-pane active" id="home">
-	<h1 class="text-center">{{ = film.titolo }} 
+<h1 class="text-center">{{ = film.titolo }} 
     	{{ if film.anno <> 0: }}
 			({{= film.anno }})
     	{{ pass }}    
     </h1>
-   	<div class="pull-right btn-group btn-group-vertical">
-    	<ul class="unstyled">
-    		<li><a class="btn" href="#" onclick="window.location='{{=URL('default','edit',args=film.id)}}'"><i class="icon-edit icon-2x"></i></a></li>
-    		{{ if film.visto: }}
-            <li><a class="btn btn-success" href="#"><i class="icon-ticket icon-2x" title="Hai già visto questo film"></i></a></li>
-    		{{ pass }}			
-    		{{ if film.masterizzato(): }}
-            <li><a class="btn" href="#"><i class="icon-save icon-2x" title="Questo film è associato a uno o più supporti"></i></a></li>
-    		{{ pass }}        	
-        	{{ if film.tmdb_id: }}    
-			<li><a class="btn" href="#" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" class="icon-refresh icon-2x"></i></a>
-			{{ else: }}
-			<li><a class="btn" href="#openModal" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" class="icon-refresh icon-2x"></i></a>
-			{{ pass }}             
-             
-        </ul>
-    </div>    
     <h4>
     <p class="muted">
     di&nbsp;
@@ -57,6 +38,27 @@
     {{ pass }}
     </p>
     </h4>    
+<div class="tab-content">
+	<div class="tab-pane active" id="home">	
+   	<div class="pull-right btn-group btn-group-vertical">
+    	<ul class="unstyled">
+    		<li><a class="btn" href="#" onclick="window.location='{{=URL('default','edit',args=film.id)}}'"><i class="icon-edit icon-2x"></i></a></li>
+    		{{ if film.visto: }}
+            <li><a class="btn btn-success" href="#"><i class="icon-ticket icon-2x" title="Hai già visto questo film"></i></a></li>
+    		{{ pass }}			
+    		{{ if film.masterizzato(): }}
+            <li><a class="btn" onclick="$('#mediatab').click();"><i class="icon-save icon-2x" title="Questo film è associato a uno o più supporti"></i></a></li>
+            
+            
+    		{{ pass }}        	
+        	{{ if film.tmdb_id: }}    
+			<li><a class="btn" href="#" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" class="icon-refresh icon-2x"></i></a>
+			{{ else: }}
+			<li><a class="btn" href="#openModal" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" class="icon-refresh icon-2x"></i></a>
+			{{ pass }}             
+             
+        </ul>
+    </div>        
 	<span class="span4">
 	<img src="{{ = URL('default','download',args=film.locandina) }}" class="img img-rounded pull-left">    	
 	<p>{{ = film.trama }}</p>		
@@ -66,7 +68,7 @@
     </span>
 </div>
 <div class="tab-pane" id="cast">
-<h2>Cast</h2>
+    <h5>Cast for this movie</h5>
 <dt>
 {{ for persona in cast.find(lambda row: row.ruoli.regista==False): }}    
     <dd>{{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}</dd>     
@@ -74,7 +76,7 @@
 </dt>
 </div>
 <div class="tab-pane" id="media">	
-    <h1>Media&nbsp;{{ = A(I(_class="icon-plus"),_href=URL('associamedia',vars=dict(film= film.id)),_class="btn btn-primary") }}</h1>
+    <h5>Media&nbsp;{{ = A(I(_class="icon-plus"),_href=URL('associamedia',vars=dict(film= film.id)),_class="btn btn-primary") }}</h5>
 	{{ if media: }}
 	{{ for supporto in media: }}
 		{{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp;
