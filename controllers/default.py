@@ -63,31 +63,6 @@ def cerca():
     else:
         return dict(risultati_film=None,risultati_attori=None)
         
-@service.json  
-def ajaxsearch():
-    #return dict(options=[dict(id=1, name= 'Terry'), dict(id= 2, name= 'Mark'), dict(id= 3, name= 'Jacob')])
-    return dict(source=[{'id': 1, 'name': 'Terry'},
- {'id': 2, 'name': 'Mark'},
- {'id': 3, 'name': 'Jacob'}])
-    #[dict(id=1,name='Terry'),dict(id=2,name='Mark'),dict(id=3,name='Jacob')]
-    ##options=[{ 'id': 1, 'name': 'Terry'}, { 'id': 2, 'name': 'Mark'}, { 'id': 3, 'name': 'Jacob'}])
-    
-    
-'''
-def ajaxsearch():    
-    form=SQLFORM(db.film,db.moviecast,fields=['slug'])        
-    if form.vars.slug != "" and form.validate(session=None, formname='cercaform'):        
-        chiave = form.vars.slug        
-        risultati_film = db(db.film.slug.contains(chiave)).select(db.film.titolo)
-        risultati_attori = db(db.moviecast.slug.contains(chiave)).select(db.moviecast.nome)
-        return [attore for attore in risultati_attori]
-        #return dict(risultati_film=[risultati_film,risultati_attori])        
-    elif form.errors:
-        response.flash = 'Form haz errors'
-    else:
-        return ['cazzo']
-        #return dict(risultati_film=None,risultati_attori=None)
-'''
 @auth.requires_signature()
 def data():
     """
@@ -170,19 +145,16 @@ def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
     
 def movieselect():
+    "ajax dropdown search demo"
     return dict()
     
 def movie_selector():
-    if not request.vars.month: return ''
-    #months = ['January', 'February', 'March', 'April', 'May','June', 'July', 'August', 'September' ,'October', 'November', 'December']
-    month_start = request.vars.month.capitalize()
-    pattern = request.vars.month.capitalize() + '%'
-    selected = [(row.slug,row.titolo) for row in db(db.film.titolo.like(pattern)).select()]    
-    return DIV(*[DIV(tit,
-                     _onclick="jQuery('#month').val('%s')" % sl,
-                     _onmouseover="this.style.backgroundColor='yellow'",
-                     _onmouseout="this.style.backgroundColor='white'"
-                     ) for sl,tit in selected])
+    "navbar search function"
+    if not request.vars.moviesearch: return ''        
+    pattern = request.vars.moviesearch.capitalize() + '%'
+    selected = [(row.slug,row.titolo) for row in db(db.film.titolo.like(pattern)).select(limitby=(0,10))]        
+    return DIV([LI(A(tit,_href=URL('default','film',args=sl),_tabindex="-1")) for sl,tit in selected])    
+    
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)
