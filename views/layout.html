@@ -84,7 +84,8 @@
                 </a>             
             	<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel" id="drop_ricerca"></ul>
             </form>      -->
-            <form class="navbar-search" onsubmit="return;false">
+                <form class="navbar-search" action="{{=URL('default','cerca')}}" method=POST>
+            <input type="hidden" name="_formname" value="cercaform" />            
 <a class="dropdown-toggle" id="toggleresult" role="button" data-toggle="dropdown" data-target="#"> 
 <div class="input-prepend">
 <span class="add-on"><i class="icon-search icon-black"></i></span>
@@ -93,12 +94,6 @@
 <div id="risultati_ricerca"></div>    
 </ul>
 </form>
-                  
-                        
-                              
-                                    
-                                          
-                                                      
             </li>                     
              <li class="nav dropdown">             
             <a class="dropdown-toggle" id="dropdownlogo" role="button" data-toggle="dropdown" data-target="#" href="#">
@@ -180,7 +175,10 @@
       <script> DD_belatedPNG.fix('img, .png_bg'); //fix any <img> or .png_bg background-images </script>
       <![endif]-->
   <script>
+      // web2py magic to send moviesearch input keystrokes to movie_selector via ajax
+      // and display results in risultati_ricerca dropdown
        jQuery("#moviesearch").keyup(function(){
+       
   	ajax('{{=URL('default','movie_selector')}}', ['moviesearch'], 'risultati_ricerca')
   });
       //  $(document).ready(function() {   

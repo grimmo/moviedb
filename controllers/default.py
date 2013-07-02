@@ -52,15 +52,14 @@ def call():
     return service()
     
 def cerca():    
-    form=SQLFORM(db.film,db.moviecast,fields=['slug'])        
-    if form.vars.slug != "" and form.validate(session=None, formname='cercaform'):        
-        chiave = form.vars.slug        
+    #form=SQLFORM(db.film,db.moviecast,fields=['slug'])        
+    #if form.vars.moviesearch != "" and form.validate(session=None, formname='cercaform'):            
+    if request.vars.moviesearch and request.vars.moviesearch != "":
+        chiave = request.vars.moviesearch        
         risultati_film = db(db.film.slug.contains(chiave)).select()
         risultati_attori = db(db.moviecast.slug.contains(chiave)).select()
         return dict(risultati_film=risultati_film,risultati_attori=risultati_attori)        
-    elif form.errors:
-        response.flash = 'Form haz errors'
-    else:
+    else:        
         return dict(risultati_film=None,risultati_attori=None)
         
 @auth.requires_signature()
@@ -151,9 +150,12 @@ def movieselect():
 def movie_selector():
     "navbar search function"
     if not request.vars.moviesearch: return ''        
-    pattern = request.vars.moviesearch.capitalize() + '%'
-    selected = [(row.slug,row.titolo) for row in db(db.film.titolo.like(pattern)).select(limitby=(0,10))]        
-    return DIV([LI(A(tit,_href=URL('default','film',args=sl),_tabindex="-1")) for sl,tit in selected])    
+    pattern = request.vars.moviesearch.capitalize()
+    titoli_film = [(row.slug,row.titolo) for row in db(db.film.titolo.contains(pattern)).select(limitby=(0,10))]        
+    nomi_cast = [(row.nome,row.slug) for row in db(db.moviecast.nome.contains(pattern)).select(limitby=(0,10))]    
+    return DIV([LI(A(tit,_href=URL('default','film',args=sl),_tabindex="-1")) for sl,tit in titoli_film]+
+    [LI(_class="divider")]+[LI(A(nome,_href=URL('default','persona',args=sl),_tabindex="-1")) for nome,sl in nomi_cast]
+    )    
     
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
