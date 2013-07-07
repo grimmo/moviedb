@@ -9,8 +9,8 @@
 ## - call exposes all registered services (none by default)
 #########################################################################
 import xmlrpclib
-tmdb_service = xmlrpclib.ServerProxy(URL('moviedb','tmdb','call',args='xmlrpc',scheme=True,host=True),allow_none=True)
-
+tmdb_service = xmlrpclib.ServerProxy(URL('tmdb','call',args=['xmlrpc'],scheme=True,host=True),allow_none=True)
+#tmdb_service = xmlrpclib.ServerProxy('http://127.0.0.1:8000/moviedb/tmdb/call/xmlrpc/',allow_none=True)
 
 def index():
     #session.forget()
@@ -229,30 +229,28 @@ def fetch_new_movie():
                session.cast_fetched = cast_fetched
                redirect(URL('moviedb','default','film',args=db.film[session.movie_id].slug))
               
-def get_movie_details():
-    movie_id = session.movie_id
-    if movie_id == "":
-        raise HTTP(404,'Did not specify movie id')
+def get_movie_details():    
+    movie_id = session.movie_id  
+    tmdb_id = request.vars.tmdb_id      
+    if movie_id != "" and not tmdb_id:
+       tmdb_id = db.film[movie.id].tmdb_id       
+    if tmdb_id == "":
+       raise HTTP(404,'Did not specify movie id')     
+    movie_details = tmdb_service.get_movie_details(tmdb_id)
+    return dict(details=movie_details)
+    if movie_details.has_key('slug') and db(db.film.tmdb_id==tmdb_id).select().last().slug == movie_details['slug']:
+       # slug exists, it is an update
+       result = tmdb_service.update_movie(movie_id,movie_details)
     else:
-        tmdb_id = request.vars.tmdb_id
-        if tmdb_id == "":
-            # If we are not passed tmdb_id explicitly, we should be sure
-            # the movie has already been updated from tmdb at least once.
-            # 
-            tmdb_id = db.film[movie_id].tmdb_id        
-            movie_details = tmdb_service.get_movie_details(tmdb_id)
-        if movie_details.has_key('slug') and db(db.film.tmdb_id==tmdb_id).select().last().slug == movie_details['slug']:
-            # same slug, let's update
-            response = tmdb_service.update_movie(movie_id,movie_details)
-        else:
-            # no or different slug, this is an insert
-            response = tmdb_service.insert_movie(movie_details)        
-            if not response['errors'] and not response['cast']['errors']:                
-                return redirect(URL('moviedb','default','film',args=(response['result'])))
-            else:                                
-                session.flash = (response['errors'])
-                return redirect(URL('moviedb','default','film',args=(response['result'])))
-            
+       # missing slug, we assume it is an insert
+       result = tmdb_service.insert_movie(movie_details)        
+    if not response['errors'] and not response['cast']['errors']:                
+       session.flash = "Update successful"       
+    else:                                
+       session.flash = (response['errors'])
+    #FIXME: cazzo succede qui??
+    #return redirect(URL('moviedb','default','film',args=(response['result'])))
+    response.js = "window.location.replace(%s)" % URL('moviedb','default','film',args=result['result'])
         
 
 # Funzione da usare solo per la migrazione da dbfilm django

@@ -122,7 +122,8 @@
         $.getJSON('/moviedb/tmdb/call/json/find_title?movie_id={{ =film.id }}', function(data) {
 			var titolitrovati = '';
 			$.each(data, function(results) {
-                var ajax_url = '/moviedb/tmdb/get_movie_details?tmdb_id='+data[results].id;
+                var ajax_url = "{{ = URL('default','get_movie_details')}}" + '?tmdb_id=' + data[results].id;
+                //'/moviedb/tmdb/get_movie_details?tmdb_id='+data[results].id;
                 titolitrovati = titolitrovati+'<dd><a href="#" onclick="ajax(\'' + ajax_url +'\',[],\':eval\')"><strong>'+data[results].title+'</strong></a>&nbsp;('+data[results].release_date+')</dd>';
 			});
 			$('.TitoliTrovati').html(titolitrovati);
