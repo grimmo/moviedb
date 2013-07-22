@@ -13,7 +13,7 @@ tmdb_service = xmlrpclib.ServerProxy(URL('tmdb','call',args=['xmlrpc'],scheme=Tr
 #tmdb_service = xmlrpclib.ServerProxy('http://127.0.0.1:8000/moviedb/tmdb/call/xmlrpc/',allow_none=True)
 
 def index():
-    #session.forget()
+    session.forget()
     film = db(db.film.id>0).select(db.film.titolo,db.film.anno,orderby=[db.film.titolo,db.film.anno])
     return dict(film=film)   
 
@@ -88,8 +88,12 @@ def film():
             raise HTTP(404)        
     c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.slug,db.ruoli.regista)
     m = db(db.formato.film == f.id).select()
-    session.movie_id = f.id  
+    session.movie_id = f.id    
     response.title = "%s - %s" % (request.application,f.titolo)
+    if session.brandnew and session.brandnew != f.id:
+        session.brandnew = None
+    if session.errors and session.errors != session.id:
+        session.errors = None
     return dict(film=f,cast=c,media=m)
 
 def edit():    
@@ -228,7 +232,23 @@ def fetch_new_movie():
                session.poster_fetched = poster_fetched
                session.cast_fetched = cast_fetched
                redirect(URL('moviedb','default','film',args=db.film[session.movie_id].slug))
+
               
+def update_movie():
+    existing_id = request.get_vars.existing_id
+    moviedb_id = request.get_vars.tmdb_id              
+    update_query = tmdb_service.big_update_movie(moviedb_id,existing_id)
+    if not update_query['errors']:       
+        if not session.brandnew:
+            session.brandnew = existing_id
+        return "jQuery(window).attr('location','%s');" % URL('moviedb','default','film',args=update_query['result'])        
+    else:
+        session.errors = existing_id   
+        #FIXME: Not good, we shall display errors via ajax
+        return "jQuery(window).attr('location','%s');jQuery('.error_message').html('%s');" % (URL('moviedb','default','film',args=update_query['result']),update_query['errors'])
+    
+"""  
+OLD                                        
 def get_movie_details():    
     movie_id = session.movie_id  
     tmdb_id = request.vars.tmdb_id      
@@ -237,21 +257,26 @@ def get_movie_details():
     if tmdb_id == "":
        raise HTTP(404,'Did not specify movie id')     
     movie_details = tmdb_service.get_movie_details(tmdb_id)
-    return dict(details=movie_details)
-    if movie_details.has_key('slug') and db(db.film.tmdb_id==tmdb_id).select().last().slug == movie_details['slug']:
+    #return dict(details=movie_details['result']['slug'])
+    #return dict(has_slug=movie_details['result']['slug'],movieslug=db(db.film.slug==movie_details['result']['slug']).select().first())
+    #return movie_details['result']['slug'] == db(db.film.slug==movie_details['result']['slug']).select().first()
+    if movie_details['result']['slug'] and db(db.film.slug==movie_details['result']['slug']).select().first():
        # slug exists, it is an update
+       session.flash = "exists"
        result = tmdb_service.update_movie(movie_id,movie_details)
     else:
        # missing slug, we assume it is an insert
+       session.flash = "missed"
        result = tmdb_service.insert_movie(movie_details)        
-    if not response['errors'] and not response['cast']['errors']:                
+       return dict(result=result)       
+    if not result['errors'] and not result['cast']['errors']:                
        session.flash = "Update successful"       
     else:                                
        session.flash = (response['errors'])
     #FIXME: cazzo succede qui??
     #return redirect(URL('moviedb','default','film',args=(response['result'])))
     response.js = "window.location.replace(%s)" % URL('moviedb','default','film',args=result['result'])
-        
+"""        
 
 # Funzione da usare solo per la migrazione da dbfilm django
 '''

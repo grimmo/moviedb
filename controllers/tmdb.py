@@ -35,9 +35,12 @@ def tmdb_config():
     risultato = gluon.contrib.simplejson.loads(response_body)
     return risultato['images']['base_url'],risultato['images']['poster_sizes'][0]
     
-def query_tmdb(api_url):
+def query_tmdb(api_url,additional_params=None):
     headers = {"Accept": "application/json"}
     data = {'api_key': THEMOVIEDB_API_KEY,'language':'it'}
+    if additional_params:
+        # If additional parameters are present, just append them to the data dictionary
+        data.update(additional_params)
     POST_url = R("%s?%s" % (api_url,urlencode(data)),headers=headers)
     return gluon.contrib.simplejson.loads(urlopen(POST_url).read())
 
@@ -71,57 +74,6 @@ def update_cast_details(tmdb_id,sessione=None):
             else:
                 errors.append('Failed to add %s as director' % director['name'])                            
     return dict(result=roles_list,errors=errors,sessione=sessione)
-"""                
-def update_movie_by_id():
-    # tmdb_id viene passato come parametro nella url
-    tmdb_id = request.vars.tmdb_id
-    # l'id del film invece deve già essere una variabile di     sessione
-    movie_id = session.movie_id
-    headers = {"Accept": "application/json"}
-    data = {'api_key': THEMOVIEDB_API_KEY,'language':'it'}
-    # URL con i dati del film
-    r = R("http://api.themoviedb.org/3/movie/%s?%s" % (tmdb_id,urlencode(data)), headers=headers)
-    response_body = urlopen(r).read()
-    # Conversionde del dato da JSON a dizionari python
-    risultato=gluon.contrib.simplejson.loads(response_body)
-    # Composizione dell'URL per il download della locandina
-    base_url,poster_size = tmdb_config()
-    complete_url='%s/%s/%s' % (base_url,poster_size,risultato['poster_path'])
-    # Questo è il path in cui viene salvata la locandina
-    file_locandina = 'applications/moviedb/uploads/%s' % risultato['poster_path'].split('/')[1]
-    # Download della locandina
-    get_loca = urlretrieve('%s' % complete_url,file_locandina)
-    floca = open(file_locandina, 'rb')
-    # Aggiornamento dei dati del film nel db
-    movie_year = strftime('%Y',strptime(risultato['release_date'],u'%Y-%m-%d'))
-    db(db.film.id==movie_id).update(titolo=risultato['title'],slug=slugify("%s %s" % (risultato['title'],movie_year)),anno=movie_year,tmdb_id=risultato['id'],trama=risultato['overview'],locandina=floca)
-    f = db.film(tmdb_id=risultato['id'])
-    if f:
-        # Necessario per forzare la conversione in slug del campo slug
-        #db(db.film.id == f.id).validate_and_update(slug='%s %s' % (f.titolo,f.anno))
-        floca.close()
-        #FIXME: Qui bisognerebbe fermarsi e separare la funzione per l'acquisizione del cast
-        data = {'api_key': THEMOVIEDB_API_KEY}
-        r = R("http://api.themoviedb.org/3/movie/%s/casts?%s" % (tmdb_id,urlencode(data)), headers=headers)
-        response_body = urlopen(r).read()
-        risultato=gluon.contrib.simplejson.loads(response_body)
-        for persona in risultato['cast']:
-            db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=slugify(persona['name']))
-            p = db.moviecast(tmdb_id==persona['id'])
-            # Se l'inserimento/update in moviecast e' andato a buon fine
-            if p:
-                #db(db.moviecast.tmdb_id==persona['id']).validate_and_update(slug=persona['name'].encode('utf-8'))
-                # Allora aggiorna anche la tabella di relazione ruolo/cast
-                db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=False)
-        for persona in risultato['crew']:
-            if persona['job'] == 'Director':
-                db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=slugify(persona['name']))
-                p = db.moviecast(tmdb_id==persona['id'])
-                if p:
-                    #db(db.moviecast.tmdb_id==persona['id']).validate_and_update(slug=persona['name'].encode('utf-8'))
-                    db.ruoli.update_or_insert(film=f.id,persona=p.id,regista=True)
-        return 'document.location = "%s";' % URL('default', 'film', args=[f.id])
-"""
 
 def cerca():
     form=FORM('Titolo:', INPUT(_name='titolotext'), INPUT(_type='submit'))
@@ -137,8 +89,6 @@ def cerca():
     else:
             return dict(form=form,risultati=None,funzione_tmdb='fetch_new_movie')
 
-
-    
 @service.xmlrpc
 def get_persondetails(person_id):
     return query_tmdb("http://api.themoviedb.org/3/person/%s" % person_id)
@@ -178,8 +128,9 @@ def get_movie_details(tmdb_id):
         return dict(result=None,errors = "Unable to get details for movie %s" % tmdb_id) 
 
 @service.xmlrpc        
-def insert_movie(movie_data):    
-    ret = db[db.film].validate_and_insert(**    {'titolo':movie_data['title'],'slug':movie_data['slug'],'tmdb_id':movie_data['id'],'anno':movie_data['year'],'trama':movie_data['overview']})
+def insert_movie(movie_data):        
+    return dict(result=123,errors=None,movie_data=movie_data)
+    ret = db[db.film].validate_and_insert(**{'titolo':movie_data['title'].encode('utf-8'),'slug':movie_data['slug'],'tmdb_id':movie_data['id'],'anno':movie_data['year'],'trama':movie_data['overview']})
     if ret.id:
         errors = ""
         tmdb_id = movie_data['id']
@@ -188,25 +139,53 @@ def insert_movie(movie_data):
     else:
         errors = ret
         return dict(result="",errors=errors,movie_data=movie_data)
-        
-@service.xmlrpc        
-def update_movie(id,movie_data):
-    db(db[film]._id==id).update(**{'titolo':movie_data['title'].encode('utf-8')})
-    db(db[film]._id==id).update(**{'slug':movie_data['slug']})
-    db(db[film]._id==id).update(**{'anno':movie_data['year']})
-    db(db[film]._id==id).update(**{'trama':movie_data['overview']})
-    db(db[film]._id==id).update(**{'anno':movie_data['year']})
-    db(db[film]._id==id).update(**{'tmdb_id':movie_data['id']})
-    tmdb_id = movie_data['id']
-    poster_query = get_movie_poster(tmdb_id)
+
+@service.xmlrpc    
+def big_update_movie(moviedb_id,existing_id):    
+    "This is an all-on-one update function, taking care of movie poster and cast details"
+    errors = []
+    roles_list = []
+    movie_data = query_tmdb("http://api.themoviedb.org/3/movie/%s" % moviedb_id,additional_params={'append_to_response':'casts'} )
+    movie_data['year'] = strftime('%Y',strptime(movie_data['release_date'],u'%Y-%m-%d'))
+    movie_data['slug'] = slugify("%s %s" % (movie_data['title'],movie_data['year']))
+    #return dict(movie_data=movie_data)
+    db(db[db.film]._id==existing_id).update(**{'titolo':movie_data['title'].encode('utf-8')})
+    db(db[db.film]._id==existing_id).update(**{'slug':movie_data['slug']})
+    db(db[db.film]._id==existing_id).update(**{'anno':movie_data['year']})
+    db(db[db.film]._id==existing_id).update(**{'trama':movie_data['overview']})
+    db(db[db.film]._id==existing_id).update(**{'anno':movie_data['year']})
+    db(db[db.film]._id==existing_id).update(**{'tmdb_id':movie_data['id']})
+    movie_slug = db.film[existing_id].slug                
+    for persona in movie_data['casts']['cast']:
+        db.moviecast.update_or_insert(nome=persona['name'].encode('utf-8'),tmdb_id=persona['id'],slug=slugify(persona['name']))           
+        p = db(db.moviecast.tmdb_id==persona['id']).select().first()        
+        # Se l'inserimento/update in moviecast e' andato a buon fine
+        if p:            
+            # Allora aggiorna anche la tabella di relazione ruolo/cast            
+            db.ruoli.update_or_insert(film=existing_id,persona=p.id,regista=False)
+            roles_list.append(dict(nome=p.nome,id=p.id,movie_id=existing_id))
+        else:
+            errors.append('Failed to add role for %s' % persona['name'])            
+    for director in movie_data['casts']['crew']:
+        if director['job'] == 'Director':        
+            db.moviecast.update_or_insert(nome=director['name'].encode('utf-8'),tmdb_id=director['id'],slug=slugify(director['name']))           
+            p = db(db.moviecast.tmdb_id==director['id']).select().first()        
+            # Se l'inserimento/update in moviecast e' andato a buon fine
+            if p:            
+                # Allora aggiorna anche la tabella di relazione ruolo/cast            
+                db.ruoli.update_or_insert(film=existing_id,persona=p.id,regista=True)
+                roles_list.append(dict(nome=p.nome,id=p.id,movie_id=existing_id,is_director=True))
+            else:
+                errors.append('Failed to add %s as director' % director['name'])                            
+    poster_query = fetch_movie_poster(moviedb_id)
     if not poster_query['errors']:
         poster_file_path = poster_query['result']
         poster_file = open(poster_file_path, 'rb')
-        db(db[film]._id==id).update(**{'locandina':poster_file})    
-        return dict(result=movie_slug,errors = None)
+        db(db[db.film]._id==existing_id).update(**{'locandina':poster_file})    
+        errors = None
+        return dict(result=movie_slug,errors = errors)
     else:
-        errors = "Unable to fetch poster for %s" % movie_data['title'].encode('utf-8')
-        movie_slug = db(db.film.tmdb_id==tmdb_id).select().last().slug
+        errors.append("Unable to fetch poster for %s" % movie_data['title'].encode('utf-8'))
         return dict(result=movie_slug,errors = errors)
         
 @service.json
