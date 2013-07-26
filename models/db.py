@@ -114,11 +114,6 @@ db.define_table('generi',
       Field('film','reference film')
       )
 
-db.define_table('tags',
-     Field('slug','string',unique=True),
-     Field('film','reference film')
-       )
-       
 db.define_table('moviecast',
      Field('nome','string'),
      Field('slug','string'),
@@ -162,6 +157,11 @@ db.define_table('legacy_formato',
      Field('multiaudio','boolean',default=False),
      Field('surround','boolean',default=False))
  
+db.define_table('tags',
+     Field('nome','string'),
+     Field('slug',compute=lambda row: row.nome and IS_SLUG(check=False)(row.nome)[0]),
+     Field('film','list:reference film'),
+     format = '%(nome)s'       )
        
 
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
@@ -170,7 +170,8 @@ db.supporto.collocazione.requires= IS_IN_DB(db,db.collocazione.id,'%(descrizione
 db.formato.film.requires = IS_IN_DB(db,db.film.id,'%(titolo)s')
 db.formato.supporto.requires = IS_IN_DB(db,db.supporto.id,lambda r: "%s n. %s" % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id))
 #db.formato.supporto.represent = lambda value,row: db.tipoformato[value].nome
-db.tags.slug.requires = IS_SLUG(check=False)
+db.tags.slug.requires = IS_NOT_IN_DB(db,'tags.slug')
+db.tags.film.requires = IS_IN_DB(db,'film.id','%(titolo)s',multiple=True)
 db.moviecast.slug.requires = IS_SLUG(check=False)
 db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
 db.film.tmdb_id.requires = IS_NOT_IN_DB(db,'film.tmdb_id')
@@ -182,3 +183,4 @@ film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.suppo
 db.film.masterizzato = Field.Method(lambda row: db((db.film.id == row.film.id) & (db.formato.film == row.film.id)).count() > 0)
 db.film.registi = Field.Method(lambda row: [directors for directors in db((db.ruoli.film == row.film.id) & (db.ruoli.regista == True) & (db.moviecast.id == db.ruoli.persona)).select(db.moviecast.nome,db.moviecast.slug)])
 db.film.cast = Field.Method(lambda row: [directors for directors in db((db.ruoli.film == row.film.id) & (db.ruoli.regista == False) & (db.moviecast.id == db.ruoli.persona)).select(db.moviecast.nome,db.moviecast.slug)])
+db.film.tags = Field.Method(lambda row: db(db.tags.film.contains(row.film.id)).select(db.tags.nome,db.tags.slug))

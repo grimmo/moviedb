@@ -246,7 +246,13 @@ def update_movie():
         session.errors = existing_id   
         #FIXME: Not good, we shall display errors via ajax
         return "jQuery(window).attr('location','%s');jQuery('.error_message').html('%s');" % (URL('moviedb','default','film',args=update_query['result']),update_query['errors'])
-    
+        
+def tags():
+    if not request.args:
+        return dict(t=db(db.tags).select(db.tags.nome,db.tags.slug))
+    else:
+        return dict(t=request.args(0),movies=db((db.tags.film.contains(db.film.id)) & (db.tags.slug == request.args(0))).select(db.film.ALL, db.film.id.count(), groupby=db.film.titolo))
+        
 """  
 OLD                                        
 def get_movie_details():    

@@ -72,7 +72,13 @@
     <dl class="horizontal">
     <dt>Giudizio:</dt><dd>{{ = film.giudizio_mio }}</dd>
 	</dl>
-    </span>
+        <strong>{{=T('Tag')}}</strong>
+        <dl class="dl-horizontal">                    
+        {{ for tag in film.tags(): }}
+            <dt>{{ = A(tag.nome,_class="btn btn-info",_href=URL('moviedb','default','tags',args=tag.slug)) }}</dt>
+        {{ pass }}
+        </dl>
+        </span>   
 </div>
 <div class="tab-pane" id="cast">
     <h5>Cast for this movie</h5>
@@ -97,6 +103,7 @@
 {{ pass }}
 </div>
 </div>
+
 <div id="openModal" class="modalDialog">
 <div>
 <a href="#close" title="Close" class="close">X</a>
