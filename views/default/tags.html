@@ -1,0 +1,18 @@
+{{extend 'layout.html'}}
+<div class="page-header">
+{{ if type(t) == str: }}
+    <h1>Film taggati <span class="btn btn-primary disabled">{{ =t }}</span></h1>
+    <ul class="unstyled">
+    {{ for film in movies: }}
+        <li>{{ = A('%s (%s)' % (film.film.titolo,film.film.anno),_href=URL('film',args=film.film.slug)) }}</li>
+    {{ pass }}
+    </ul>
+{{ else: }}
+<h1>Tags</h1>
+    <ul class="unstyled">
+        {{ for tag in t: }}
+        <li>{{ = A(tag.nome,_href=URL('tags',args=tag.slug),_class="btn btn-info disabled") }}</li>&nbsp;
+        {{ pass }}
+    </ul>
+</div>
+{{ pass }}

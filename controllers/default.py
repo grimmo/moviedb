@@ -253,6 +253,14 @@ def tags():
     else:
         return dict(t=request.args(0),movies=db((db.tags.film.contains(db.film.id)) & (db.tags.slug == request.args(0))).select(db.film.ALL, db.film.id.count(), groupby=db.film.titolo))
         
+def autotag():
+     return dict()
+        
+@service.json
+def list_tags():
+     rows = db(db.tags.nome.like(request.get_vars.q + '%')).select(db.tags.nome)
+     return dict(data=[tag.nome for tag in rows])
+        
 """  
 OLD                                        
 def get_movie_details():    
