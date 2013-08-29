@@ -196,8 +196,7 @@ def get_movie_poster():
         response = tmdb_service.fetch_movie_poster(tmdb_id)
         if response.has_key('errors') and response['errors']:
             return dict(result=response['errors'])
-        else:
-            redirect(URL('moviedb','default','film.html',args=db(db.film.tmdb_id==tmdb_id).select().last().slug))
+        else: redirect(URL('moviedb','default','film.html',args=db(db.film.tmdb_id==tmdb_id).select().last().slug))
     else:
         raise HTTP(404,'Did not specify themoviedb id')
         
@@ -205,34 +204,12 @@ def fetch_new_movie():
     tmdb_id = request.vars.tmdb_id
     if tmdb_id == "":
        raise HTTP(404,'Missing movie id')       
-    else:        
-       movie_details = tmdb_service.get_movie_details(tmdb_id)       
-       if movie_details['errors'] or not movie_details['result']:
-           return dict(result=None,errors='Unable to fetch details for movie')
+    else:
+       movie_id,movie_data,errors =  tmdb_service.full_insert_movie(tmdb_id)
+       if movie_id and len(errors) == 0:
+           redirect(URL('moviedb','default','film',args=movie_data['slug']))
        else:
-           movie_details = movie_details['result']           
-           insert_response = tmdb_service.insert_movie(movie_details)               
-       if insert_response['errors']:
-           movie_fetched = False
-           return dict(result="",errors=insert_response['errors'],movie_data=insert_response['movie_data'])
-       else:           
-           movie_fetched = True                          
-           session.movie_id = insert_response['result']
-           poster_file = tmdb_service.fetch_movie_poster(tmdb_id)                                      
-           if poster_file.has_key('errors') and poster_file['errors']:
-               poster_fetched = False
-           else:
-               poster_fetched = True                
-               cast_response = tmdb_service.update_cast_details(tmdb_id)                              
-               if cast_response['errors']:
-                   cast_fetched = False
-               else:
-                   cast_fetched = True      
-               session.brandnew = movie_fetched                           
-               session.poster_fetched = poster_fetched
-               session.cast_fetched = cast_fetched
-               redirect(URL('moviedb','default','film',args=db.film[session.movie_id].slug))
-
+           return dict(errors=errors)       
               
 def update_movie():
     existing_id = request.get_vars.existing_id
