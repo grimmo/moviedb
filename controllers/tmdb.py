@@ -142,7 +142,7 @@ def insert_movie(movie_data):
 
 #EXPERIMENTAL
 @service.xmlrpc
-def full_insert_movie(tmdb_id):
+def full_insert_movie(tmdb_id):    
     movie_data = query_tmdb("http://api.themoviedb.org/3/movie/%s" % tmdb_id,additional_params={'append_to_response':'casts,images'})
     errors = []
     movie_data['year'] = strftime('%Y',strptime(movie_data['release_date'],u'%Y-%m-%d'))
@@ -152,36 +152,20 @@ def full_insert_movie(tmdb_id):
     complete_poster_url='%s/%s/%s' % (base_url,poster_size,file_path)  
     # Questo è il path in cui viene salvata la locandina    
     file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
-    urlretrieve('%s' % complete_poster_url,file_locandina)
-    #TODO: Qui ci va un altro try
+    urlretrieve('%s' % complete_poster_url,file_locandina)    
     floca = open(file_locandina, 'rb')
-    try:
-        movie_id = db[db.film].insert(**{'slug':movie_data['slug'],'titolo':movie_data['title'].encode('utf-8'),'anno':movie_data['year'],'trama':movie_data['overview'],'anno':movie_data['year'],'tmdb_id':movie_data['id'],'locandina':floca})
-    except:
-        raise    
+    movie = db[db.film].validate_and_insert(**{'slug':movie_data['slug'],'titolo':movie_data['title'].encode('utf-8'),'anno':movie_data['year'],'trama':movie_data['overview'],'anno':movie_data['year'],'tmdb_id':movie_data['id'],'locandina':floca})
+    if hasattr(movie,'errors') and movie.errors:
+       return "Errors detected: %s" % movie.errors.keys()    
     for persona in movie_data['casts']['cast']:
-        db.moviecast.update_or_insert(nome=persona['name'].encode('utf-8'),tmdb_id=persona['id'],slug=slugify(persona['name']))           
-        p = db(db.moviecast.tmdb_id==persona['id']).select().first()        
-        # Se l'inserimento/update in moviecast e' andato a buon fine
-        if p:            
-            # Allora aggiorna anche la tabella di relazione ruolo/cast            
-            db.ruoli.update_or_insert(film=movie_id,persona=p.id,regista=False)
-           # roles_list.append(dict(nome=p.nome,id=p.id,movie_id=movie_id))
-        else:
-            errors.append('Failed to add role for %s' % persona['name'])            
-    for director in movie_data['casts']['crew']:
-        if director['job'] == 'Director':        
-            db.moviecast.update_or_insert(nome=director['name'].encode('utf-8'),tmdb_id=director['id'],slug=slugify(director['name']))           
-            p = db(db.moviecast.tmdb_id==director['id']).select().first()        
-            # Se l'inserimento/update in moviecast e' andato a buon fine
-            if p:            
-                # Allora aggiorna anche la tabella di relazione ruolo/cast            
-                db.ruoli.update_or_insert(film=movie_id,persona=p.id,regista=True)
-                #roles_list.append(dict(nome=p.nome,id=p.id,movie_id=existing_id,is_director=True))
-            else:
-                errors.append('Failed to add %s as director' % director['name'])  
-    floca.close()                          
-    return dict(movie_id=movie_id,movie_data=movie_data)
+        db.moviecast.update_or_insert(db.moviecast.tmdb_id == persona['id'],nome=persona['name'].encode('utf-8'),tmdb_id=persona['id'],slug=slugify(persona['name'].encode('utf-8')))
+        db.ruoli.update_or_insert(((db.ruoli.film==movie.id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == persona['id']).id) & (db.ruoli.regista == False)),film=movie.id,persona=db.moviecast(db.moviecast.tmdb_id == persona['id']).id,regista=False)        
+    for regista in movie_data['casts']['crew']:
+        if regista['job'] == 'Director':        
+            db.moviecast.update_or_insert(db.moviecast.tmdb_id == regista['id'],nome=regista['name'].encode('utf-8'),tmdb_id=regista['id'],slug=slugify(regista['name'].encode('utf-8')))                                    
+            db.ruoli.update_or_insert(((db.ruoli.film==movie.id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == regista['id']).id) & (db.ruoli.regista == True)),film=movie.id,persona=db.moviecast(db.moviecast.tmdb_id == regista['id']).id,regista=True)
+    floca.close()
+    return dict(slug=db.film[movie.id].slug)   
 
 @service.xmlrpc    
 def big_update_movie(moviedb_id,existing_id):    

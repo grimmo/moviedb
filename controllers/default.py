@@ -205,11 +205,11 @@ def fetch_new_movie():
     if tmdb_id == "":
        raise HTTP(404,'Missing movie id')       
     else:
-       movie_id,movie_data,errors =  tmdb_service.full_insert_movie(tmdb_id)
-       if movie_id and len(errors) == 0:
-           redirect(URL('moviedb','default','film',args=movie_data['slug']))
+       status = tmdb_service.full_insert_movie(tmdb_id)
+       if type(status) == dict and status['slug']:
+           redirect(URL('moviedb','default','film',args=status['slug']))           
        else:
-           return dict(errors=errors)       
+           return status
               
 def update_movie():
     existing_id = request.get_vars.existing_id
