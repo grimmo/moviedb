@@ -11,7 +11,7 @@
 <h1>Tags</h1>
     <ul class="unstyled">
         {{ for tag in t: }}
-        <li>{{ = A(tag.nome,_href=URL('tags',args=tag.slug),_class="btn btn-info disabled") }}</li>&nbsp;
+        <li>{{ = A(tag.nome,_href=URL('tags',args=tag.slug),_class="btn btn-info") }}</li>&nbsp;
         {{ pass }}
     </ul>
 </div>

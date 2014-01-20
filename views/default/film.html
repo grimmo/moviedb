@@ -92,13 +92,14 @@
     <h5>Media&nbsp;{{ = A(I(_class="icon-plus"),_href=URL('associamedia',vars=dict(film= film.id)),_class="btn btn-primary") }}</h5>
 	{{ if media: }}
 	{{ for supporto in media: }}
-		{{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp;
+		{{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp; 
 			{{ if db.supporto[supporto.supporto].id_originale: }}
 				{{ =A(db.supporto[supporto.supporto].id_originale,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
 			{{ else: }}
 				{{ =A(db.supporto[supporto.supporto].id,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
 			{{ pass }}
 	&nbsp;({{ =supporto.tipo }})
+        
 	{{ pass }}		
 {{ pass }}
 </div>

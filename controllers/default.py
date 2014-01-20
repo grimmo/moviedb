@@ -14,8 +14,14 @@ tmdb_service = xmlrpclib.ServerProxy(URL('tmdb','call',args=['xmlrpc'],scheme=Tr
 
 def index():
     session.forget()
-    film = db(db.film.id>0).select(db.film.titolo,db.film.anno,orderby=[db.film.titolo,db.film.anno])
-    return dict(film=film)   
+    if len(request.args): page=int(request.args[0])
+    else: page=0
+    items_per_page=20
+    limitby=(page*items_per_page,(page+1)*items_per_page+1)
+    #rows=db().select(db.prime.ALL,limitby=limitby)
+    #return dict(rows=rows,page=page,items_per_page=items_per_page)
+    film = db(db.film.id>0).select(limitby=limitby,orderby=[db.film.titolo,db.film.anno])
+    return dict(film=film,page=page,items_per_page=items_per_page)
 
 def user():
     """
@@ -113,6 +119,15 @@ def movieandcastedit():
     elif form.errors:
        response.flash = 'form has errors'
     return dict(form=form)            
+
+def collocazione():
+    location = db.collocazione(id=request.args(0))
+    if not location:
+        raise HTTP(404)
+    else:
+        response.title = "%s" % location.descrizione
+        contenuto = db(db.supporto.collocazione == request.args(0)).select()
+    return dict(location=location,contenuto=contenuto)
                 
                 
 def supporto():    
