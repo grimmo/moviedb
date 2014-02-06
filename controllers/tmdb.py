@@ -229,3 +229,16 @@ def find_title():
      film_trovati = gluon.contrib.simplejson.loads(response_body)
      risultati = film_trovati['results']
      return risultati
+     
+@service.json
+def cercatitolo(titolo,anno=None):
+    if titolo:
+        headers = {"Accept": "application/json"}
+        data = {'api_key': THEMOVIEDB_API_KEY,'query':titolo,'language':'it','anno':anno}
+        r = R("http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)
+        response_body = urlopen(r).read()
+        film_trovati = gluon.contrib.simplejson.loads(response_body)
+        risultati = film_trovati['results']
+        return dict(risultati=risultati,funzione_tmdb='fetch_new_movie')
+    else:
+        raise HTTP(400,'Devi inserire titolo e anno')

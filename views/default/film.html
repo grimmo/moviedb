@@ -70,6 +70,9 @@
 	<img src="{{ = URL('default','download',args=film.locandina) }}" class="img img-rounded pull-left">    	
 	<p>{{ = film.trama }}</p>		
     <dl class="horizontal">
+        {{ if film.nota: }}
+        <dt>Note:</dt><dd>{{ = film.nota }}</dd>
+        {{ pass }}
     <dt>Giudizio:</dt><dd>{{ = film.giudizio_mio }}</dd>
 	</dl>
         <strong>{{=T('Tag')}}</strong>
