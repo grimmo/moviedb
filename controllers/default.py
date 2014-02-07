@@ -103,6 +103,7 @@ def film():
     return dict(film=f,cast=c,media=m)
 
 def edit():    
+    crud.settings.update_next = URL('moviedb','default','film',args=(db.film[request.args(0)].slug))
     return dict(form=crud.update(db.film, request.args(0)))   
     
 def union(x,y):
