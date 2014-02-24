@@ -36,6 +36,7 @@ def tmdb_config():
     return risultato['images']['base_url'],risultato['images']['poster_sizes'][0]
     
 def query_tmdb(api_url,additional_params=None):
+    session.forget()
     headers = {"Accept": "application/json"}
     data = {'api_key': THEMOVIEDB_API_KEY,'language':'it'}
     if additional_params:
@@ -140,10 +141,10 @@ def insert_movie(movie_data):
         errors = ret
         return dict(result="",errors=errors,movie_data=movie_data)
 
-#EXPERIMENTAL
 @service.xmlrpc
-def full_insert_movie(tmdb_id):    
-    movie_data = query_tmdb("http://api.themoviedb.org/3/movie/%s" % tmdb_id,additional_params={'append_to_response':'casts,images'})
+def full_insert_movie(tmdb_id):  
+    session.forget()
+    movie_data = query_tmdb("http://api.themoviedb.org/3/movie/%s" % tmdb_id,additional_params={'append_to_response':'casts,images'})    
     errors = []
     movie_data['year'] = strftime('%Y',strptime(movie_data['release_date'],u'%Y-%m-%d'))
     movie_data['slug'] = slugify("%s %s" % (movie_data['title'],movie_data['year']))  
@@ -154,17 +155,17 @@ def full_insert_movie(tmdb_id):
     file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
     urlretrieve('%s' % complete_poster_url,file_locandina)    
     floca = open(file_locandina, 'rb')
-    movie = db[db.film].validate_and_insert(**{'slug':movie_data['slug'],'titolo':movie_data['title'].encode('utf-8'),'anno':movie_data['year'],'trama':movie_data['overview'],'anno':movie_data['year'],'tmdb_id':movie_data['id'],'locandina':floca})
+    movie = db[db.film].validate_and_insert(**{'slug':movie_data['slug'],'titolo':movie_data['title'],'anno':movie_data['year'],'trama':movie_data['overview'],'anno':movie_data['year'],'tmdb_id':movie_data['id'],'locandina':floca})
     if hasattr(movie,'errors') and movie.errors:
-       return "Errors detected: %s" % movie.errors.keys()    
+        return "Errors detected: %s" % movie.errors.keys()    
     for persona in movie_data['casts']['cast']:
-        db.moviecast.update_or_insert(db.moviecast.tmdb_id == persona['id'],nome=persona['name'].encode('utf-8'),tmdb_id=persona['id'],slug=slugify(persona['name'].encode('utf-8')))
-        db.ruoli.update_or_insert(((db.ruoli.film==movie.id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == persona['id']).id) & (db.ruoli.regista == False)),film=movie.id,persona=db.moviecast(db.moviecast.tmdb_id == persona['id']).id,regista=False)        
+        db.moviecast.update_or_insert(db.moviecast.tmdb_id == persona['id'],nome=persona['name'],tmdb_id=persona['id'],slug=slugify(persona['name']))
+        db.ruoli.update_or_insert(((db.ruoli.film==movie.id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == persona['id']).id) & (db.ruoli.regista == False)),film=movie.id,persona=db.moviecast(db.moviecast.tmdb_id == persona['id']).id,regista=False)
     for regista in movie_data['casts']['crew']:
         if regista['job'] == 'Director':        
-            db.moviecast.update_or_insert(db.moviecast.tmdb_id == regista['id'],nome=regista['name'].encode('utf-8'),tmdb_id=regista['id'],slug=slugify(regista['name'].encode('utf-8')))                                    
+            db.moviecast.update_or_insert(db.moviecast.tmdb_id == regista['id'],nome=regista['name'],tmdb_id=regista['id'],slug=slugify(regista['name']))
             db.ruoli.update_or_insert(((db.ruoli.film==movie.id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == regista['id']).id) & (db.ruoli.regista == True)),film=movie.id,persona=db.moviecast(db.moviecast.tmdb_id == regista['id']).id,regista=True)
-    floca.close()
+    floca.close()    
     return dict(slug=db.film[movie.id].slug)   
 
 @service.xmlrpc    
@@ -176,7 +177,7 @@ def big_update_movie(moviedb_id,existing_id):
     movie_data['year'] = strftime('%Y',strptime(movie_data['release_date'],u'%Y-%m-%d'))
     movie_data['slug'] = slugify("%s %s" % (movie_data['title'],movie_data['year']))
     #return dict(movie_data=movie_data)
-    db(db[db.film]._id==existing_id).update(**{'titolo':movie_data['title'].encode('utf-8')})
+    db(db[db.film]._id==existing_id).update(**{'titolo':movie_data['title']})
     db(db[db.film]._id==existing_id).update(**{'slug':movie_data['slug']})
     db(db[db.film]._id==existing_id).update(**{'anno':movie_data['year']})
     db(db[db.film]._id==existing_id).update(**{'trama':movie_data['overview']})
@@ -184,7 +185,7 @@ def big_update_movie(moviedb_id,existing_id):
     db(db[db.film]._id==existing_id).update(**{'tmdb_id':movie_data['id']})
     movie_slug = db.film[existing_id].slug                
     for persona in movie_data['casts']['cast']:
-        db.moviecast.update_or_insert(nome=persona['name'].encode('utf-8'),tmdb_id=persona['id'],slug=slugify(persona['name']))           
+        db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=slugify(persona['name']))           
         p = db(db.moviecast.tmdb_id==persona['id']).select().first()        
         # Se l'inserimento/update in moviecast e' andato a buon fine
         if p:            
@@ -195,7 +196,7 @@ def big_update_movie(moviedb_id,existing_id):
             errors.append('Failed to add role for %s' % persona['name'])            
     for director in movie_data['casts']['crew']:
         if director['job'] == 'Director':        
-            db.moviecast.update_or_insert(nome=director['name'].encode('utf-8'),tmdb_id=director['id'],slug=slugify(director['name']))           
+            db.moviecast.update_or_insert(nome=director['name'],tmdb_id=director['id'],slug=slugify(director['name']))           
             p = db(db.moviecast.tmdb_id==director['id']).select().first()        
             # Se l'inserimento/update in moviecast e' andato a buon fine
             if p:            
