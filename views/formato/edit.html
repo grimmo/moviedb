@@ -1,0 +1,15 @@
+{{extend 'layout.html'}}
+<h1>{{ =T('Edit media for ') }}
+<span class="btn btn-large btn-primary disabled">
+{{ try: }}
+{{ = film.titolo }}
+{{ except: }}
+    <i class="icon-save"></i>&nbsp;{{= media.tipo.nome }}&nbsp;n.
+    {{ if media.id_originale: }}
+    {{ = media.id_originale }}&nbsp;<i class="icon-asterisk" title="Imported from dbfilm"></i>
+    {{ else: }}
+		{{ = media.id }}
+    {{ pass }}    
+{{ pass }}
+</span>
+{{ = form }}

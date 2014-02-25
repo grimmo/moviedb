@@ -168,6 +168,7 @@ db.define_table('tags',
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
 db.supporto.tipo.requires = IS_IN_DB(db,db.tiposupporto.id,'%(nome)s')
 db.supporto.collocazione.requires= IS_IN_DB(db,db.collocazione.id,'%(descrizione)s')
+db.supporto.id.represent = lambda value,row: A("%s n. %s" % (db.tiposupporto[row.tipo].nome,value),_href=URL('supporto', args=value))
 db.formato.film.requires = IS_IN_DB(db,db.film.id,'%(titolo)s')
 db.formato.supporto.requires = IS_IN_DB(db,db.supporto.id,lambda r: "%s n. %s" % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id))
 #db.formato.supporto.represent = lambda value,row: db.tipoformato[value].nome
