@@ -97,11 +97,11 @@
 	{{ for supporto in media: }}
 		{{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp; 
 			{{ if db.supporto[supporto.supporto].id_originale: }}
-				{{ =A(db.supporto[supporto.supporto].id_originale,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
+    {{ =A(db.supporto[supporto.supporto].id_originale,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
 			{{ else: }}
 				{{ =A(db.supporto[supporto.supporto].id,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
 			{{ pass }}
-	&nbsp;({{ =supporto.tipo }})
+	&nbsp;({{ =supporto.tipo }})&nbsp;<a href="{{ =URL('formato','edit',args=(film.id)) }}"><i class="icon-edit icon-large"></i></a>
         
 	{{ pass }}		
 {{ pass }}

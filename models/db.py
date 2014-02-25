@@ -134,7 +134,8 @@ db.define_table('film',
      Field('trama','text'),
      Field('adulti','boolean',default=False),
      Field('tmdb_id','string',unique=True),
-     Field('id_originale','string'),  
+     Field('id_originale','string'), 
+     format='%(titolo)s (%(anno)i)'
      )
      
 db.define_table('ruoli',
