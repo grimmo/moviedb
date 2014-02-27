@@ -24,6 +24,31 @@ def index():
     film = db(db.film.id>0).select(limitby=limitby,orderby=[db.film.titolo,db.film.anno])
     return dict(film=film,page=page,items_per_page=items_per_page)
 
+def index_new():
+    grid = SQLFORM.grid(db.film,fields=[db.film.titolo,db.film.registi],editable=False,deletable=False)
+    return locals()
+
+# Ok, the next three functions are ugly and it can be done much better than this, but for now it just works.
+def movies_by_flag(limitby,flag=False):
+    return db(db.film.visto == flag).select(limitby=limitby,orderby=[db.film.titolo,db.film.anno])
+
+def seen():
+    session.forget()
+    if len(request.args): page=int(request.args[0])
+    else: page=0
+    items_per_page=20
+    limitby=(page*items_per_page,(page+1)*items_per_page+1)
+    return dict(film=movies_by_flag(limitby,flag=True),page=page,items_per_page=items_per_page)
+
+def unseen():
+    session.forget()
+    if len(request.args): page=int(request.args[0])
+    else: page=0
+    items_per_page=20
+    limitby=(page*items_per_page,(page+1)*items_per_page+1)
+    return dict(film=movies_by_flag(limitby),page=page,items_per_page=items_per_page)
+
+
 def user():
     """
     exposes:

@@ -73,6 +73,7 @@
 <body>
   <!-- Navbar ================================================== -->  
   <div class="navbar navbar-inverse navbar-fixed-top">
+  <div class="flash">{{=response.flash or ''}}</div>
     <div class='navbar-inner'>
         <a class="brand" href="{{=URL('default','index')}}">MovieDB</a>
         <div class='container'>                       
