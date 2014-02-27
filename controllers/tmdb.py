@@ -9,10 +9,12 @@ from urllib import urlencode,urlretrieve
 
 service = Service(globals())
 
-filepath = os.path.join(request.folder, "private", "themoviedb.key")
-with open(filepath) as tmdb_api_key_file:
+try:
+    filepath = os.path.join(request.folder, "private", "themoviedb.key")
+    with open(filepath) as tmdb_api_key_file:
         THEMOVIEDB_API_KEY = cPickle.load(tmdb_api_key_file)
-
+except:
+    redirect(URL('default','add_api_key'))
 
 
 def call():

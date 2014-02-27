@@ -103,8 +103,10 @@
             <i class="icon-plus-sign hidden-phone"></i>
             </a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownlogo">
-                <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">Fetch new movie</a></li>
-                <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">Add new media</a></li>
+                <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">{{=T('Fetch new movie')}}</a></li>
+                <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">{{=T('Add new media')}}</a></li>
+                <li><a href="{{=URL('collocazione','data/create/collocazione',user_signature=True)}}" title="Crea nuova collocazione">{{=T('Add new location')}}</a></li>
+                <li><a href="{{=URL('default','data/create/tiposupporto',user_signature=True)}}" title="Crea nuovo tipo di supporto">{{=T('Add new media type')}}</a></li>
             </ul>
             </li>
         </div>

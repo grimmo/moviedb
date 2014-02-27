@@ -9,6 +9,7 @@
 ## - call exposes all registered services (none by default)
 #########################################################################
 import xmlrpclib
+import cPickle,os
 tmdb_service = xmlrpclib.ServerProxy(URL('tmdb','call',args=['xmlrpc'],scheme=True,host=True),allow_none=True)
 #tmdb_service = xmlrpclib.ServerProxy('http://127.0.0.1:8000/moviedb/tmdb/call/xmlrpc/',allow_none=True)
 
@@ -253,42 +254,25 @@ def autotag():
 def list_tags():
      rows = db(db.tags.nome.like(request.get_vars.q + '%')).select(db.tags.nome)
      return dict(data=[tag.nome for tag in rows])
-        
-"""  
-OLD                                        
-def get_movie_details():    
-    movie_id = session.movie_id  
-    tmdb_id = request.vars.tmdb_id      
-    if movie_id != "" and not tmdb_id:
-       tmdb_id = db.film[movie.id].tmdb_id       
-    if tmdb_id == "":
-       raise HTTP(404,'Did not specify movie id')     
-    movie_details = tmdb_service.get_movie_details(tmdb_id)
-    #return dict(details=movie_details['result']['slug'])
-    #return dict(has_slug=movie_details['result']['slug'],movieslug=db(db.film.slug==movie_details['result']['slug']).select().first())
-    #return movie_details['result']['slug'] == db(db.film.slug==movie_details['result']['slug']).select().first()
-    if movie_details['result']['slug'] and db(db.film.slug==movie_details['result']['slug']).select().first():
-       # slug exists, it is an update
-       session.flash = "exists"
-       result = tmdb_service.update_movie(movie_id,movie_details)
-    else:
-       # missing slug, we assume it is an insert
-       session.flash = "missed"
-       result = tmdb_service.insert_movie(movie_details)        
-       return dict(result=result)       
-    if not result['errors'] and not result['cast']['errors']:                
-       session.flash = "Update successful"       
-    else:                                
-       session.flash = (response['errors'])
-    #FIXME: cazzo succede qui??
-    #return redirect(URL('moviedb','default','film',args=(response['result'])))
-    response.js = "window.location.replace(%s)" % URL('moviedb','default','film',args=result['result'])
-"""        
 
-# Funzione da usare solo per la migrazione da dbfilm django
+    # Funzione da usare solo per la migrazione da dbfilm django
 '''
 def update_formati():
     righe = []
     for row in film_e_formati.select(db.legacy_formato.tipo,db.film.id,db.supporto.id,db.legacy_formato.multiaudio,db.legacy_formato.surround):  righe.append(db.formato.insert(tipo=row.legacy_formato.tipo,film=row.film.id,supporto=row.supporto.id,multiaudio=row.legacy_formato.multiaudio,surround=row.legacy_formato.surround))
     return dict(righe=righe)   
 '''
+
+def add_tmdb_api_key():
+    form=FORM('Enter your API key:', INPUT(_name='akey'), INPUT(_type='submit'))
+    if form.accepts(request,session) and form.vars.akey != "":
+        filepath = os.path.join(request.folder, "private", "themoviedb.key")
+        with open(filepath, 'wb') as tmdb_api_keyfile:
+            cPickle.dump(form.vars.akey, tmdb_api_keyfile)
+        session.flash = "API key added successfully"
+        redirect(URL('index'))
+    elif form.errors:
+        session.flash = "Error! Please input a valid key"
+    else:
+        session.flash = "Please input your api key" 
+    return dict(form=form)
