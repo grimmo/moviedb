@@ -147,6 +147,7 @@
 'New password': 'New password',
 'New Record': 'Nuovo elemento (record)',
 'new record inserted': 'nuovo record inserito',
+'next %s rows': 'next %s rows',
 'next 100 rows': 'prossime 100 righe',
 'No databases in this application': 'Nessun database presente in questa applicazione',
 'No records found': 'No records found',

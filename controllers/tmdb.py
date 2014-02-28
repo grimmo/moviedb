@@ -154,6 +154,7 @@ def full_insert_movie(tmdb_id):
     file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
     urlretrieve('%s' % complete_poster_url,file_locandina)    
     floca = open(file_locandina, 'rb')
+    #session.flash = "fin qui tutto bene"    
     movie = db[db.film].validate_and_insert(**{'slug':movie_data['slug'],'titolo':movie_data['title'].encode('utf-8'),'anno':movie_data['year'],'trama':movie_data['overview'],'anno':movie_data['year'],'tmdb_id':movie_data['id'],'locandina':floca})
     if hasattr(movie,'errors') and movie.errors:
        return "Errors detected: %s" % movie.errors.keys()    
