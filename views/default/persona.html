@@ -1,13 +1,19 @@
 {{extend 'layout.html'}}
 <div class="page-header">
 <h1>{{ = persona.nome }}</h1>
-&egrave; presente nel cast di  questi film:
+{{=T('starred in the following movies:') }}
 <ul>
-{{ for film in correlati: }}
-    <li>{{ = A(film.titolo,_href=URL('default','film',args=film.id)) }}</li>
+{{ for film in persona.recitati(): }}
+    <li>{{ = A(film.titolo,_href=URL('default','film',args=film.slug)) }}</li>
 {{ pass }}
 </ul>
-
+{{=T('was director on the following movies:') }}
+<ul>
+{{ for film in persona.diretti(): }}
+    <li>{{ = A(film.titolo,_href=URL('default','film',args=film.slug)) }}</li>
+{{ pass }}
+</ul>
+    
 {{ if tmdb_data: }}
 	<dt>
         <dd><strong>Nato il</strong>&nbsp;{{ = tmdb_data['birthday'] }}</dd>

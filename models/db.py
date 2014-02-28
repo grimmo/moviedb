@@ -178,11 +178,18 @@ db.moviecast.slug.requires = IS_SLUG(check=False)
 db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
 db.film.tmdb_id.requires = IS_NOT_IN_DB(db,'film.tmdb_id')
 db.film.titolo.represent = lambda value,row:     A("%s (%s)" % (value,db.film(db.film.titolo==value).anno),_href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
-persone_e_film = db((db.film.id==db.ruoli.film)         & (db.moviecast.id ==db.ruoli.persona))
-film_e_supporti = db((db.film.id==db.formato.film)         & (db.supporto.id ==db.formato.supporto))
 db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).slug,extension='html'))
-film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))
+# Campi virtuali
 db.film.masterizzato = Field.Method(lambda row: db((db.film.id == row.film.id) & (db.formato.film == row.film.id)).count() > 0)
 db.film.registi = Field.Method(lambda row: [directors for directors in db((db.ruoli.film == row.film.id) & (db.ruoli.regista == True) & (db.moviecast.id == db.ruoli.persona)).select(db.moviecast.nome,db.moviecast.slug)])
-db.film.cast = Field.Method(lambda row: [directors for directors in db((db.ruoli.film == row.film.id) & (db.ruoli.regista == False) & (db.moviecast.id == db.ruoli.persona)).select(db.moviecast.nome,db.moviecast.slug)])
+db.film.cast = Field.Method(lambda row: [actors for actors in db((db.ruoli.film == row.film.id) & (db.ruoli.regista == False) & (db.moviecast.id == db.ruoli.persona)).select(db.moviecast.nome,db.moviecast.slug)])
+db.film.formati = Field.Method(lambda row:[formato for formato in db((db.formato.film == row.film.id) & (db.formato.supporto == db.supporto.id)).select()])
 db.film.tags = Field.Method(lambda row: db(db.tags.film.contains(row.film.id)).select(db.tags.nome,db.tags.slug))
+db.moviecast.recitati = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == False) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
+db.moviecast.diretti = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == True) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
+db.supporto.contenuti = Field.Method(lambda row:[formato for formato in db((db.formato.supporto == row.supporto.id) & (db.formato.film == db.film.id)).select()])
+
+# OLD sostituiti con metodi virtuali della tabella film
+#film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))
+#persone_e_film = db((db.film.id==db.ruoli.film) & (db.moviecast.id ==db.ruoli.persona))
+#film_e_supporti = db((db.film.id==db.formato.film) & (db.supporto.id ==db.formato.supporto))

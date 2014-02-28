@@ -112,21 +112,22 @@ def data():
     return dict(form=crud())
     
 def film():
-    try:
+    # If request.args(0) is numeric then it's the id
+    if request.args(0).isdigit():
         f = db.film[request.args(0)]
-    except:
+    else:
+    # otherwise it's the slug
         f = db(db.film.slug == request.args(0)).select().first()
-        if not f:
-            raise HTTP(404)        
-    c = persone_e_film(db.ruoli.film==f.id).select(db.moviecast.nome,db.moviecast.slug,db.ruoli.regista)
-    m = db(db.formato.film == f.id).select()
-    session.movie_id = f.id    
+    # apparently f can still be None, so better checking if its got an id
+    if not hasattr(f,'id'):        
+        raise HTTP(404,'Movie not found')
+    session.movie_id = f.id
     response.title = "%s - %s" % (request.application,f.titolo)
     if session.brandnew and session.brandnew != f.id:
         session.brandnew = None
     if session.errors and session.errors != session.id:
         session.errors = None
-    return dict(film=f,cast=c,media=m)
+    return dict(film=f)
 
 def edit():    
     crud.settings.update_next = URL('moviedb','default','film',args=(db.film[request.args(0)].slug))
@@ -164,9 +165,8 @@ def supporto():
     if media.id_originale:
         response.title = '%s n.%s*' % (media.tipo.nome,media.id_originale)
     else:
-        response.title = '%s n.%s' % (media.tipo.nome,media.id)
-    contenuto = film_e_supporti(db.formato.supporto==media.id).select()
-    return dict(media=media,contenuto=contenuto)    
+        response.title = '%s n.%s' % (media.tipo.nome,media.id)    
+    return dict(media=media)
                 
                 
 def persona():
@@ -177,15 +177,15 @@ def persona():
     #apparently, except is not enough
     if not p:
         raise HTTP(404)
-    else:
-        correlati = persone_e_film(db.ruoli.persona== db(db.moviecast.id == p.id).select().first()).select(db.film.titolo,db.film.id)
-        if p.tmdb_id:       
-           tmdb_data = tmdb_service.get_persondetails(p.tmdb_id)
-           return dict(persona=p,correlati=correlati,tmdb_data=tmdb_data)    
+    else:        
+        if p.tmdb_id:
+            #experimental on disk caching, as this function requests live data from themoviedb.org
+           tmdb_data = cache.disk('tmbd_service', lambda:tmdb_service.get_persondetails(p.tmdb_id) , time_expire=60)
+           #tmdb_data = tmdb_service.get_persondetails(p.tmdb_id)
+           return dict(persona=p,tmdb_data=tmdb_data)
         else:
-            return dict(persona=p,correlati=correlati) 
-    
-    
+            return dict(persona=p)
+
 def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
     

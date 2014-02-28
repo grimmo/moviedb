@@ -40,8 +40,8 @@
     <h4>
     <p class="muted">
     di&nbsp;
-    {{ for persona in cast.find(lambda row: row.ruoli.regista==True): }}    
-        {{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}
+    {{ for regista in film.registi(): }}
+    {{=A(regista.nome,_href=URL('default','persona',args=(regista.slug)))}}&nbsp;
     {{ pass }}
     </p>
     </h4>    
@@ -87,25 +87,20 @@
 <div class="tab-pane" id="cast">
     <h5>Cast for this movie</h5>
 <dt>
-{{ for persona in cast.find(lambda row: row.ruoli.regista==False): }}    
-    <dd>{{ = A(persona.moviecast.nome,_href=URL('default','persona',args=persona.moviecast.slug)) }}</dd>     
+{{ for attore in film.cast(): }}    
+    <dd>{{ = A(attore.nome,_href=URL('default','persona',args=attore.slug)) }}</dd>     
 {{ pass }}
 </dt>
 </div>
 <div class="tab-pane" id="media">	
     <h5>Media&nbsp;{{ = A(I(_class="icon-plus"),_href=URL('associamedia',vars=dict(film= film.id)),_class="btn btn-primary") }}</h5>
-	{{ if media: }}
-	{{ for supporto in media: }}
-		{{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp; 
-			{{ if db.supporto[supporto.supporto].id_originale: }}
-    {{ =A(db.supporto[supporto.supporto].id_originale,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
-			{{ else: }}
-				{{ =A(db.supporto[supporto.supporto].id,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
-			{{ pass }}
-	&nbsp;({{ =supporto.tipo }})&nbsp;<a href="{{ =URL('formato','edit',vars=dict(media_id=supporto.supporto.id,movie_id=film.id)) }}"><i class="icon-pencil icon-large"></i></a>
-        
-	{{ pass }}		
-{{ pass }}
+    {{ if film.formati(): }}    
+        {{ for formato in film.formati(): }}
+    In {{=formato.formato.tipo }} su {{ =A('%s n.%s' %(formato.supporto.tipo.nome,formato.supporto.id_originale or formato.supporto.id),_href=URL('default','supporto',args=(formato.supporto.id))) }} il {{ = formato.supporto.datacreazione }}
+        {{ pass }}
+    {{ else: }}
+    {{=T('No media found for this movie. Why not adding one?')}}
+    {{ pass }}
 </div>
 </div>
 
