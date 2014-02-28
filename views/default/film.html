@@ -66,9 +66,10 @@
              
         </ul>
     </div>        
-	<span class="span4">
-	<img src="{{ = URL('default','download',args=film.locandina) }}" class="img img-rounded pull-left">    	
-	<p>{{ = film.trama }}</p>		
+	<span class="span9">
+	<img src="{{ = URL('default','download',args=film.locandina) }}" class="img img-rounded pull-right">    	
+    <i class="icon-quote-left icon-4x pull-left icon-muted"></i>
+	{{ = film.trama }}
     <dl class="horizontal">
         {{ if film.nota: }}
         <dt>Note:</dt><dd>{{ = film.nota }}</dd>
@@ -97,11 +98,11 @@
 	{{ for supporto in media: }}
 		{{ = db.supporto[supporto.supporto].tipo.nome }} n.&nbsp; 
 			{{ if db.supporto[supporto.supporto].id_originale: }}
-				{{ =A(db.supporto[supporto.supporto].id_originale,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
+    {{ =A(db.supporto[supporto.supporto].id_originale,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
 			{{ else: }}
 				{{ =A(db.supporto[supporto.supporto].id,_href=URL('default','supporto',args=db.supporto[supporto.supporto].id)) }}
 			{{ pass }}
-	&nbsp;({{ =supporto.tipo }})
+	&nbsp;({{ =supporto.tipo }})&nbsp;<a href="{{ =URL('formato','edit',vars=dict(media_id=supporto.supporto.id,movie_id=film.id)) }}"><i class="icon-pencil icon-large"></i></a>
         
 	{{ pass }}		
 {{ pass }}

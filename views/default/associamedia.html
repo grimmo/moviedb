@@ -1,6 +1,6 @@
 {{extend 'layout.html'}}
 <div class="page-header">
-<h1>Associate {{ =A("%s (%s)" %(db.film[session.movie_id].titolo,db.film[session.movie_id].anno),_href=URL('default','film',args=db.film[session.movie_id].slug)) }} to media</h1>
+    <h1>Add new media to {{ =A("%s (%s)" %(db.film[session.movie_id].titolo,db.film[session.movie_id].anno),_href=URL('default','film',args=db.film[session.movie_id].slug)) }}</h1>
 </div>
 {{ =form }}
 {{ try: }}

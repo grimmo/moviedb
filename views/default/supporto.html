@@ -8,7 +8,7 @@
     {{ pass }}
 </h1>
 </div>
-<a class="btn btn-large btn-primary" href="#"><i class="icon-plus"></i>&nbsp;Aggiungi film</a>
+<a class="btn btn-large btn-primary" href="{{ = URL('formato','edit',vars=dict(media_id=media.id))}}"><i class="icon-plus"></i>&nbsp;Aggiungi film</a>
 <dl class="dl-horizontal">
     <dt>Creato il</dt>
     <dd>{{ = media.datacreazione }}</dd>
@@ -20,6 +20,6 @@
 <h3>Contiene: </h3>
 <ul>
 {{ for video in contenuto: }}
-    <li><a href="{{=URL('default','film',args=(video.film.id))}}">{{ =video.film.titolo }}</a>&nbsp;in formato&nbsp;<em>{{=video.formato.tipo}}</em></li> 
+    <li><a href="{{=URL('default','film',args=(video.film.id))}}">{{ =video.film.titolo }}</a>&nbsp;in formato&nbsp;<em>{{=video.formato.tipo}}</em>&nbsp;<a href="{{ =URL('formato','edit',vars=dict(movie_id=video.film.id,media_id=media.id)) }}"><i class="icon-pencil icon-large"></i></a></li>
 {{ pass }}
 </ul>
