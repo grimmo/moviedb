@@ -3,6 +3,7 @@ from tmdbsimple import TMDB
 from time import strptime,strftime,sleep
 from urllib import urlencode,urlretrieve
 
+# Questa API key macari non dovremmo pubblicarla..
 tmdb = TMDB('d25e780038d6c2ef21b823be1d973de3')
 
 def slugify(text):
@@ -77,17 +78,32 @@ def fetch_existing_movie(movie_id,tmdb_id):
         logger.debug('Adding cast & crew')
         for persona in movie.credits['cast']:
             logger.debug('Adding %s' % persona['name'])
-            db.moviecast.update_or_insert(db.moviecast.tmdb_id == persona['id'],nome=persona['name'],tmdb_id=persona['id'],slug=slugify(persona['name']))
-            db.ruoli.update_or_insert(((db.ruoli.film==movie_id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == persona['id']).id) & (db.ruoli.regista==False)),film=movie_id,persona=db.moviecast(db.moviecast.tmdb_id == persona['id']).id,regista=False)
+            try:
+                db.moviecast.update_or_insert(db.moviecast.tmdb_id == persona['id'],nome=persona['name'],tmdb_id=persona['id'],slug=slugify(persona['name']))
+            except db._adapter.driver.IntegrityError:
+                logger.error('%s presente in database. Aggiornamento dettagli non effettuato' % persona['name'])
+                pass
+            try:
+                db.ruoli.update_or_insert(((db.ruoli.film==movie_id) & (db.ruoli.persona == persona['id']) & (db.ruoli.regista==False)),film=movie_id,persona=persona['id'],regista=False)
+            except db._adapter.driver.IntegrityError:
+                logger.error('%s ha un ruolo assegnato in questo film. Aggiornamento ruoli non effettuato' % persona['name'])
+                pass
         for regista in movie.credits['crew']:
             if regista['job'] == 'Director':
                 logger.debug('Adding %s as Director' % regista['name'])
-                db.moviecast.update_or_insert(db.moviecast.tmdb_id == regista['id'],nome=regista['name'],tmdb_id=regista['id'],slug=slugify(regista['name']))
-                db.ruoli.update_or_insert(((db.ruoli.film==movie_id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == regista['id']).id) & (db.ruoli.regista == True)),film=movie_id,persona=db.moviecast(db.moviecast.tmdb_id == regista['id']).id,regista=True)
+                try:
+                    db.moviecast.update_or_insert(db.moviecast.tmdb_id == regista['id'],nome=regista['name'],tmdb_id=regista['id'],slug=slugify(regista['name']))
+                except db._adapter.driver.IntegrityError:
+                    logger.error('%s presente in database. Aggiornamento dettagli non effettuato' % regista['name'])
+                    pass
+                try:
+                    db.ruoli.update_or_insert(((db.ruoli.film==movie_id) & (db.ruoli.persona == regista['id']) & (db.ruoli.regista==True)),film=movie_id,persona=regista['id'],regista=True)
+                except db._adapter.driver.IntegrityError:
+                    logger.error('%s gia assegnato come regista per questo film. Aggiornamento ruoli non effettuato' % regista['name'])
+                    pass
         logger.debug('Commiting db again')        
         db.commit()
         return db.film[movie_id].slug
-    
-    
+
 from gluon.scheduler import Scheduler
 scheduler = Scheduler(db)

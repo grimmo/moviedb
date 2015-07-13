@@ -304,9 +304,6 @@ def add_tmdb_api_key():
         session.flash = "Please input your api key"
     return dict(form=form)
 
-def task_status_view():
-    return dict(heading_text=request.vars.heading,success_message=request.vars.success,failure_message=request.vars.failure,success_url=request.vars.success_url,task_id=request.vars.task)
-
 @service.json
 def task_status():
     """Questa vista ritorna in formato JSON le informazioni sullo stato di un task schedulato"""
@@ -314,18 +311,9 @@ def task_status():
     task = db.scheduler_task[id_task]
     return dict(id=task.id,status=task.status,nextrun=task.next_run_time)
 
+def task_status_view():
+    return dict(heading_text=request.vars.heading,success_message=request.vars.success,failure_message=request.vars.failure,success_url=request.vars.success_url,task_id=request.vars.task)
 
-@service.json
-def trovatitolo(query):
-    #form=FORM('Titolo da cercare:', INPUT(_name='qtitolo'), INPUT(_type='submit'))
-    tmdb = TMDB('d25e780038d6c2ef21b823be1d973de3')
-    search = tmdb.Search()
-    reply = search.movie({'query': query,'language':'it'})
-    risultati = []
-    for r in search.results:
-        risultati.append({'url':URL('fetch_movie',args=(r['id'])),'titolo':r['title'],'anno':r['release_date']})
-    return risultati
-    #return search.results
 """
 @service.json
 def inserisci_film_differito(tmdb_id):

@@ -19,47 +19,39 @@
 </div>
 <script>
 $(document).ready(function () {
-    aggiorna_stato();
+aggiorna_stato();
 });
-// Assign handlers immediately after making the request,
-// and remember the jqxhr object for this request
+                 
 function aggiorna_stato() {
-var jqxhr = $.getJSON("{{=URL('moviedb/default','call','json',args=('task_status'),vars=dict(task=task_id))}}", function() {
-console.log( "Richiesta AJAX inviata" );
+var jqxhr = $.getJSON("{{=URL('moviedb','default','call/json',args=('task_status'),vars=dict(task=task_id))}}", function() {
+  console.log( "success" );
 })
-.done(function() {
-console.log( "richiesta AJAX conclusa" );
-})
-.fail(function() {
-jQuery('#failbox').show();
-jQuery('#spinner').hide();
-console.log( "error" );
-})
-.success(function() {
+  .done(function(task) {
+    console.log( "funzione completata. In teoria dovremmo avere l'oggetto task" );
+    console.log(task.status);
+    if (task.status == "COMPLETED") {
        jQuery('#successbox').show();
        jQuery('#spinner').hide();
-       jQuery('#statustext').text('Elaborazione completata con successo.');
-})
-.always(function() {
-console.log( "que lo scrivo sempre" );
-});
-// Perform other work here ...
-// Set another completion function for the request above
-jqxhr.complete(function(data) {
-    setTimeout(aggiorna_stato,5000);
-    console.log( "task status:",data.responseJSON );
-    if (data.responseJSON.status == "COMPLETED") {
-
-    }
-    else if (data.responseJSON.status == "FAILED") {
-        jQuery('#failbox').show();
-        jQuery('#spinner').hide();
-    }    
-    else if ((data.responseJSON.status == "QUEUED") || (data.responseJSON.status == "ASSIGNED") || (data.responseJSON.status == "RUNNING")){
-    setTimeout(aggiorna_stato,5000);
-    }
-    //jQuery('#statustext').text(data.responseJSON.status);
-    console.log(data.responseJSON.status);
-});
+       jQuery('#statustext').text('Aggiornamento dettagli completato con successo.');
+  }
+    else if (task.status == "FAILED") {
+    jQuery('#failbox').show();
+    jQuery('#spinner').hide();
+    jQuery('#statustext').text('Aggiornamento dettagli fallito. Il task risulta:'+task.status);
+  }
+    else {
+        setTimeout(aggiorna_stato,5000);
+  }
+  })
+  .fail(function(task) {
+    console.log( "richiesta status task fallito" );
+    console.log(task.status);
+    jQuery('#failbox').show();
+    jQuery('#spinner').hide();
+    jQuery('#statustext').text('Errore durante la richiesta di stato del task.');
+  })
+  .always(function() {
+    console.log( "que lo scrivi a prescindere" );
+  });
 }
 </script>
