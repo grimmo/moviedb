@@ -1,22 +1,31 @@
 {{extend 'layout.html'}}
-{{ if form: }}
 <h1>Inserisci il titolo da cercare</h1>
-{{ = form }}
-{{ pass }}
-
-{{ if risultati: }}
-
-<h2> Film trovati </h2>
-
-<TABLE>
-    <THEAD>
-    <TH>Titolo</TH><TH>Anno di uscita</TH><TH>Titolo originale</TH>
-    </THEAD>
-    <TBODY>
-    {{ for film in risultati: }}    
-        <TR><TD>{{ =A(film['title'],_href=URL('default',funzione_tmdb,vars=dict(tmdb_id=film['id']))) }}</TD><TD>{{ = film['release_date'] }}</TD><TD>{{ = film['original_title'] }}</TD></TR>    
-    {{ pass }}
-    </TBODY>
-</TABLE>
-        
-{{ pass }}
+<button onclick="giao();">
+    Giao
+</button>
+<script>
+// Using YQL and JSONP
+function giao() {
+$(document).ready(function() {
+            var surl = "http://ip.jsontest.com/?callback=showIP";
+            $.ajax({
+                type: 'GET',
+                url: surl,
+                crossDomain: true,
+                contentType: "application/json; charset=utf-8",
+                //data: { UserID: 1234 },
+                dataType: "jsonp",
+                success: function(msg) {
+                    $.each(msg, function(name, value) {
+                        console.log(msg);
+                    });
+                },               
+                async: false,
+                cache: false
+            });
+        });
+}
+    function showIP(address) {
+    alert('Il tuo IP: '+address.ip);
+    }
+</script>

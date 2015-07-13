@@ -108,12 +108,6 @@ db.define_table('supporto',
       format=lambda r: '%s n. %s ' % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id)
       )
       
-db.define_table('generi',
-      Field('nome','string',unique=True),
-      Field('hidden','boolean',default=False,readable=False),
-      Field('film','reference film')
-      )
-
 db.define_table('moviecast',
      Field('nome','string'),
      Field('slug','string'),
@@ -163,6 +157,12 @@ db.define_table('tags',
      Field('slug',compute=lambda row: row.nome and IS_SLUG(check=False)(row.nome)[0]),
      Field('film','list:reference film'),
      format = '%(nome)s'       )
+
+db.define_table('generi',
+      Field('nome','string',unique=True),
+      Field('hidden','boolean',default=False,readable=False),
+      Field('film','reference film')
+      )
        
 
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
@@ -176,7 +176,7 @@ db.tags.slug.requires = IS_NOT_IN_DB(db,'tags.slug')
 db.tags.film.requires = IS_IN_DB(db,'film.id','%(titolo)s',multiple=True)
 db.moviecast.slug.requires = IS_SLUG(check=False)
 db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
-db.film.tmdb_id.requires = IS_NOT_IN_DB(db,'film.tmdb_id')
+#db.film.tmdb_id.requires = IS_NOT_IN_DB(db,'film.tmdb_id')
 db.film.titolo.represent = lambda value,row:     A("%s (%s)" % (value,db.film(db.film.titolo==value).anno),_href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
 db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).slug,extension='html'))
 # Campi virtuali
@@ -188,6 +188,10 @@ db.film.tags = Field.Method(lambda row: db(db.tags.film.contains(row.film.id)).s
 db.moviecast.recitati = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == False) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
 db.moviecast.diretti = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == True) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
 db.supporto.contenuti = Field.Method(lambda row:[formato for formato in db((db.formato.supporto == row.supporto.id) & (db.formato.film == db.film.id)).select()])
+db.formato.film.widget = SQLFORM.widgets.autocomplete(request, db.film.titolo, limitby=(0,10), min_length=2,id_field=db.film.id)
+
+
+
 
 # OLD sostituiti con metodi virtuali della tabella film
 #film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))

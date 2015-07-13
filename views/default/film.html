@@ -59,10 +59,10 @@
             
     		{{ pass }}        	
         	{{ if film.tmdb_id: }}    
-			<li><a class="btn" href="#" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" class="icon-refresh icon-2x"></i></a>
+			<li><a class="btn" href="{{ = URL('movie','fetch_existing',vars=dict(tmdb_id=film.tmdb_id,movie_id=film.id)) }}" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" class="icon-refresh icon-2x"></i></a>
 			{{ else: }}
 			<li><a class="btn" href="#openModal" onclick="aggiorna_film()" id="tmdbupdate_btn"><i id="tmdbupdate_spinner" class="icon-refresh icon-2x"></i></a>
-			{{ pass }}             
+			{{ pass }}
              
         </ul>
     </div>        
@@ -113,18 +113,6 @@
 </dt>
    	</div>
 </div>
-{{ if film.tmdb_id: }}
-<script>
-    // Funzione di aggiornamento diretto con id di themoviedb.org
-    function aggiorna_film() {        
-        $("#tmdbupdate_spinner").addClass("icon-refresh icon-spin");
-        $("#tmdbupdate_btn").attr('disabled','disabled');
-        //$("#tmdbupdate_btn").text('attendere...')
-        //return ajax('/moviedb/tmdb/update_movie_by_id?tmdb_id={{ = film.tmdb_id }}',[],':eval');
-        return ajax('/moviedb/default/update_movie?existing_id={{=film.id}}&tmdb_id={{ =film.tmdb_id }}',[],':eval');
-    }
-</script>
-{{ else: }}
 <script>
     // Funzione di aggiornamento indiretto, e' necessario prima trovare l'id del film corretto
     // su themoviedb.org
@@ -133,10 +121,12 @@
         //$("#tmdbupdate_btn").attr('disabled','disabled');
         //$("#tmdbupdate_btn").text('attendere...');	
     	window.location.hash = '#'+'openModal';
+        //http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)
         $.getJSON('/moviedb/tmdb/call/json/find_title?movie_id={{ =film.id }}', function(data) {
 			var titolitrovati = '';
 			$.each(data, function(results) {
-                var ajax_url = "{{ = URL('default','update_movie')}}" + '?existing_id={{=film.id}}&tmdb_id=' + data[results].id;
+                //var ajax_url = "{{ = URL('default','update_movie')}}" + '?existing_id={{=film.id}}&tmdb_id=' + data[results].id;
+                var ajax_url = "{{ = URL('movie/fetch_existing',vars=dict(tmdb_id="+data[results].id+",movie_id=film.id)) }}";
                 //'/moviedb/tmdb/get_movie_details?tmdb_id='+data[results].id;
                 titolitrovati = titolitrovati+'<dd><a href="#" onclick="ajax(\'' + ajax_url +'\',[],\':eval\')"><strong>'+data[results].title+'</strong></a>&nbsp;('+data[results].release_date+')</dd>';
 			});

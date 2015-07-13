@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 {
 '!=': '!=',
 '!langcode!': 'it',
@@ -99,7 +99,10 @@
 'Email and SMS': 'Email and SMS',
 'Email non valida': 'Email non valida',
 'enter a number between %(min)g and %(max)g': 'enter a number between %(min)g and %(max)g',
+'Enter a number between %(min)g and %(max)g': 'Enter a number between %(min)g and %(max)g',
+'Enter an integer between %(min)g and %(max)g': 'Enter an integer between %(min)g and %(max)g',
 'enter an integer between %(min)g and %(max)g': 'enter an integer between %(min)g and %(max)g',
+'Enter an integer greater than or equal to %(min)g': 'Enter an integer greater than or equal to %(min)g',
 'Errors': 'Errors',
 'Errors in form, please check it out.': 'Errors in form, please check it out.',
 'export as csv file': 'esporta come file CSV',
@@ -136,6 +139,7 @@
 'Internal State': 'Stato interno',
 'Introduction': 'Introduction',
 'Invalid email': 'Email non valida',
+'invalid json': 'invalid json',
 'Invalid login': 'Invalid login',
 'Invalid Query': 'Richiesta (query) non valida',
 'invalid request': 'richiesta non valida',
@@ -178,6 +182,7 @@
 'not authorized': 'non autorizzato',
 'Not authorized': 'Not authorized',
 'not in': 'not in',
+'Not of type: %s': 'Not of type: %s',
 'Nota': 'Nota',
 'Object or table name': 'Object or table name',
 'Old password': 'Old password',
@@ -207,6 +212,7 @@
 'Record %(id)s created': 'Record %(id)s created',
 'Record %(id)s updated': 'Record %(id)s updated',
 'Record Created': 'Record Created',
+'Record Deleted': 'Record Deleted',
 'record does not exist': 'il record non esiste',
 'Record ID': 'Record ID',
 'Record id': 'Record id',
@@ -274,6 +280,7 @@
 'User %(id)s Profile updated': 'User %(id)s Profile updated',
 'User %(id)s Registered': 'User %(id)s Registered',
 'User ID': 'ID Utente',
+'Value already in database or empty': 'Value already in database or empty',
 'value already in database or empty': 'value already in database or empty',
 'value not in database': 'value not in database',
 'Verify Password': 'Verify Password',
