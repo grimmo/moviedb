@@ -33,6 +33,8 @@ var jqxhr = $.getJSON("{{=URL('moviedb','default','call/json',args=('task_status
        jQuery('#successbox').show();
        jQuery('#spinner').hide();
        jQuery('#statustext').text('Aggiornamento dettagli completato con successo.');
+        slug = task.result.replace(/['"]+/g, '');
+        redirect_to_result('/moviedb/film/'+slug);
   }
     else if (task.status == "FAILED") {
     jQuery('#failbox').show();
@@ -53,5 +55,9 @@ var jqxhr = $.getJSON("{{=URL('moviedb','default','call/json',args=('task_status
   .always(function() {
     console.log( "que lo scrivi a prescindere" );
   });
+}
+    
+function redirect_to_result(url) {
+    window.location.replace(url);
 }
 </script>

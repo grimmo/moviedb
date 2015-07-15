@@ -10,6 +10,8 @@ def slugify(text):
     return IS_SLUG(check=False)(text.encode('utf-8'))[0]
 
 def fetch_new_movie(tmdb_id):
+    logging.debug('Inside fetch_new_movie')
+    logging.debug('Fetching tmdb ID:%s' % tmdb_id)
     movie = tmdb.Movies(tmdb_id)
     status = movie.info(params={'language':'it','append_to_response':'credits'})
     logger.debug('tmdb movie info status for %s:%s' % (tmdb_id,status))
@@ -45,7 +47,7 @@ def fetch_new_movie(tmdb_id):
                 logger.debug('Adding %s as Director' % regista['name'])
                 db.moviecast.update_or_insert(db.moviecast.tmdb_id == regista['id'],nome=regista['name'],tmdb_id=regista['id'],slug=slugify(regista['name']))
                 db.ruoli.update_or_insert(((db.ruoli.film==f.id) & (db.ruoli.persona == db.moviecast(db.moviecast.tmdb_id == regista['id']).id) & (db.ruoli.regista == True)),film=f.id,persona=db.moviecast(db.moviecast.tmdb_id == regista['id']).id,regista=True)
-        logger.debug('Commiting db again')        
+        logger.debug('Commiting db again')
         db.commit()
         return db.film[f.id].slug
 
