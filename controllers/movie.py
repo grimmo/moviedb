@@ -28,7 +28,10 @@ def fetch_new():
 
 def find_title():
    form=FORM('Titolo:', INPUT(_name='titolo'), INPUT(_type='submit',_value='Cerca'))
-   if form.accepts(request,session):
+   if request.vars.titolo:
+       risultati = trovatitolo(request.vars.titolo)
+       return dict(form=form,risultati=risultati)
+   elif form.accepts(request,session):
         risultati = trovatitolo(form.vars.titolo)
         return dict(form=form,risultati=risultati)
    return dict(form=form,risultati=None)
@@ -39,6 +42,6 @@ def trovatitolo(query):
     reply = search.movie({'query': query,'language':'it'})
     risultati = []
     for r in search.results:
-        risultati.append({'url':URL('movie','fetch_new',vars=dict(tmdb_id=r['id'])),'titolo':r['title'],'anno':r['release_date']})
+        risultati.append({'url':URL('movie','fetch_new',vars=dict(tmdb_id=r['id']),extension='html'),'titolo':r['title'],'anno':r['release_date']})
     return risultati
     #return search.results

@@ -107,32 +107,14 @@
 <div id="openModal" class="modalDialog">
 <div>
 <a href="#close" title="Close" class="close">X</a>
-<h2>Seleziona il film corrispondente</h2>
-<dt>
+<span class="labelfinestra">
+    <h2>Seleziona il film corrispondente</h2>
+    </span>
 <span class="TitoliTrovati"></span>
-</dt>
-   	</div>
 </div>
-<script>
-    // Funzione di aggiornamento indiretto, e' necessario prima trovare l'id del film corretto
-    // su themoviedb.org
-    function aggiorna_film() {    	 
-        //$("#tmdbupdate_spinner").addClass("icon-refresh icon-spin"); 
-        //$("#tmdbupdate_btn").attr('disabled','disabled');
-        //$("#tmdbupdate_btn").text('attendere...');	
-    	window.location.hash = '#'+'openModal';
-        //http://api.themoviedb.org/3/search/movie?%s" % urlencode(data), headers=headers)
-        titolo_encodato = encodeURI({{= film.titolo}});
-        $.getJSON('/moviedb/movie/call/json/trovatitolo?query='+titolo_encodato, function(data) {
-			var titolitrovati = '';
-			$.each(data, function(results) {
-                //var ajax_url = "{{ = URL('default','update_movie')}}" + '?existing_id={{=film.id}}&tmdb_id=' + data[results].id;
-                var ajax_url = "{{ = URL('movie/fetch_existing',vars=dict(tmdb_id="+data[results].id+",movie_id=film.id)) }}";
-                //'/moviedb/tmdb/get_movie_details?tmdb_id='+data[results].id;
-                titolitrovati = titolitrovati+'<dd><a href="#" onclick="ajax(\'' + ajax_url +'\',[],\':eval\')"><strong>'+data[results].title+'</strong></a>&nbsp;('+data[results].release_date+')</dd>';
-			});
-			$('.TitoliTrovati').html(titolitrovati);
-		});
-};
+<script> 
+    function aggiorna_film() {
+        web2py_component('{{=URL('movie','find_title.load',vars=dict(titolo=film.titolo))}}','openModal');
+}
 </script>
 {{ pass }}
