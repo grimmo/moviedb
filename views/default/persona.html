@@ -1,13 +1,13 @@
 {{extend 'layout.html'}}
 <div class="page-header">
 <h1>{{ = persona.nome }}</h1>
-{{=T('starred in the following movies:') }}
+{{=T('played in the following movies:') }}
 <ul>
 {{ for film in persona.recitati(): }}
     <li>{{ = A(film.titolo,_href=URL('default','film',args=film.slug)) }}</li>
 {{ pass }}
 </ul>
-{{=T('was director on the following movies:') }}
+{{=T('directed the following movies:') }}
 <ul>
 {{ for film in persona.diretti(): }}
     <li>{{ = A(film.titolo,_href=URL('default','film',args=film.slug)) }}</li>

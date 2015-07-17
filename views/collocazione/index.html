@@ -1,0 +1,46 @@
+{{extend 'layout.html'}}
+{{ if collocazione: }}
+<div class="hero-unit">
+    <h1><a href="#">{{ = collocazione.nome }}</a></h1>
+<p>
+    {{ = collocazione.descrizione }}
+</p>
+</div>
+{{ pass }}
+{{ if collocazione and supporti: }}
+    <h3>
+        Questa collocazione contiene {{ = len(supporti) }} supporti
+    </h3>
+    <a class="pull-right" href="#">
+    <img class="media-object" src="{{=URL('static','images',args=('spindle.jpg'))}}">
+    </a>
+    <ul class="unstyled">
+    {{ for disco in supporti: }}
+    <li>
+        <span class="label label-inverse">
+            <a href="{{=URL('default','supporto',args=(disco.id))}}">{{ = '%s n. %s' % (disco.tipo.nome,disco.id_originale or disco.id) }}</a>
+        </span>&nbsp;contenuto:&nbsp;
+        <span class="badge badge-success" data-toggle="collapse" data-target="#collapsed{{=disco.id}}">
+            {{ = disco.formato.count() }}&nbsp;<i class="icon-chevron-down"></i></span>&nbsp;FILM
+    </li>
+    <div id="collapsed{{=disco.id}}" class="collapse">
+         {{ for film in disco.formato.select(): }}
+            <li><a href="{{ =URL('film',film.film.slug)}}">{{ = film.film.titolo }} ({{ = film.film.anno }})</a></li>
+         {{ pass }}
+    </div>
+    {{ pass }}
+</ul>
+{{ elif collocazione and not supporti: }}
+ <h2>
+     Non risultano presenti supporti
+</h2>
+{{ pass }}
+{{ if collocazioni: }}
+<h1> Collocazioni trovate:</h1>
+    {{ for collocazione in collocazioni: }}
+        <li><a href="{{ = URL('collocazione','index',args=collocazione.id) }}">{{ =collocazione.nome }}</a>&nbsp;(contiene {{ = collocazione.supporto.count() }} supporti)</li>
+    {{ pass }}
+{{ pass }}
+<div id="footer">
+<a href="{{ = URL('collocazione','index') }}">Elenco delle collocazioni</a>
+</div>

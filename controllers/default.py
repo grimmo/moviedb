@@ -167,7 +167,6 @@ def supporto():
         response.title = '%s n.%s' % (media.tipo.nome,media.id)
     return dict(media=media)
 
-
 def persona():
     try:
         p= db.moviecast(slug=request.args(0))
@@ -178,9 +177,10 @@ def persona():
         raise HTTP(404)
     else:
         if p.tmdb_id:
-            #experimental on disk caching, as this function requests live data from themoviedb.org
-           tmdb_data = cache.disk('tmbd_service', lambda:tmdb_service.get_persondetails(p.tmdb_id) , time_expire=60)
+           #experimental on disk caching, as this function requests live data from themoviedb.org
+           #tmdb_data = cache.disk('tmbd_service', lambda:tmdb_service.get_persondetails(p.tmdb_id) , time_expire=60)
            #tmdb_data = tmdb_service.get_persondetails(p.tmdb_id)
+           tmdb_data =tmdb.People(p.tmdb_id).info()
            return dict(persona=p,tmdb_data=tmdb_data)
         else:
             return dict(persona=p)
@@ -223,9 +223,13 @@ def associamedia():
         db.formato.supporto.default = session.media_id
         return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id))
     else:
-        supporti = db(db.supporto.id>0).select()        
-        db.formato.supporto.default = supporti.last().id
-        return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id),suppoform=crud.create(db.supporto,next='associamedia',fields=['tipo','collocazione'],onaccept=on_accept_suppoform))
+        supporti = db(db.supporto.id>0).select()
+        if supporti:
+            db.formato.supporto.default = supporti.last().id
+        suppoform = crud.create(db.supporto,next='associamedia',fields=['tipo','collocazione'],onaccept=on_accept_suppoform)
+        my_extra_element =  A('Nuova colloazione',_href=URL('collocazione','aggiungi',user_signature=True))
+        suppoform[0].insert(-1,my_extra_element)
+        return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id),suppoform=suppoform)
 
 def status():
     return dict(request=request, session=session, response=response)

@@ -11,7 +11,10 @@
 
 if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
-    db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'])
+    #db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'])
+    #'w2p_dba'@'localhost' IDENTIFIED BY 'moviedbrul3z!'
+    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=False,check_reserved=['mysql'],pool_size=5)
+    #db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=False,check_reserved=['mysql'],pool_size=5)
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
     db = DAL('google:datastore')
@@ -89,14 +92,14 @@ now = datetime.datetime.now()
 # Tabelle "ereditate" da dbfilm su django
 
 db.define_table('tiposupporto',
-      Field('nome','string'),
+      Field('nome','string',length=50),
       Field('permanente','boolean',default=False),
       format = '%(nome)s'
       )
       
 db.define_table('collocazione',
-      Field('nome','string'),
-      Field('descrizione','string')
+      Field('nome','string',length=100),
+      Field('descrizione','text')
       )
       
 db.define_table('supporto',
@@ -104,31 +107,31 @@ db.define_table('supporto',
       Field('collocazione',db.collocazione),
       Field('datacreazione','datetime',default=now),
       Field('datamodifica','datetime',default=now),
-      Field('id_originale','string',unique=True)      ,
+      Field('id_originale','string',unique=True,length=10),
       format=lambda r: '%s n. %s ' % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id)
       )
       
 db.define_table('moviecast',
-     Field('nome','string'),
-     Field('slug','string'),
-     Field('tmdb_id','string',required=True,unique=True),
+     Field('nome','string',length=255),
+     Field('slug','string',length=255),
+     Field('tmdb_id','integer',required=True,unique=True),
      Field('foto','upload',default=''))
      
 db.define_table('film',
-     Field('titolo','string'),     
+     Field('titolo','string',length=255),
      Field('anno','integer'),
-     Field('slug','string',unique=True),
+     Field('slug','string',length=255,unique=True),
      Field('visto','boolean',default=False),     
      Field('datacreazione','datetime',default=now),
      Field('datamodifica','datetime',default=now),
-     Field('scheda_cinematografo','string'),
+     Field('scheda_cinematografo','string',length=255),
      Field('locandina','upload'),
-     Field('giudizio_mio','decimal(2,2)',default=0.0),
+     Field('giudizio_mio','string',length=10),
      Field('nota','text'),
      Field('trama','text'),
      Field('adulti','boolean',default=False),
-     Field('tmdb_id','string',unique=True),
-     Field('id_originale','string'), 
+     Field('tmdb_id','integer',unique=True),
+     Field('id_originale','integer'),
      format='%(titolo)s (%(anno)i)'
      )
      
@@ -153,13 +156,13 @@ db.define_table('legacy_formato',
      Field('surround','boolean',default=False))
  
 db.define_table('tags',
-     Field('nome','string'),
+     Field('nome','string',length=255),
      Field('slug',compute=lambda row: row.nome and IS_SLUG(check=False)(row.nome)[0]),
      Field('film','list:reference film'),
      format = '%(nome)s'       )
 
 db.define_table('generi',
-      Field('nome','string',unique=True),
+      Field('nome','string',unique=True,length=255),
       Field('hidden','boolean',default=False,readable=False),
       Field('film','reference film')
       )
@@ -189,11 +192,3 @@ db.moviecast.recitati = Field.Method(lambda row: [actors for actors in db((db.ru
 db.moviecast.diretti = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == True) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
 db.supporto.contenuti = Field.Method(lambda row:[formato for formato in db((db.formato.supporto == row.supporto.id) & (db.formato.film == db.film.id)).select()])
 db.formato.film.widget = SQLFORM.widgets.autocomplete(request, db.film.titolo, limitby=(0,10), min_length=2,id_field=db.film.id)
-
-
-
-
-# OLD sostituiti con metodi virtuali della tabella film
-#film_e_formati = db((db.legacy_formato.film == db.film.id_originale) & (db.supporto.id_originale == db.legacy_formato.supporto))
-#persone_e_film = db((db.film.id==db.ruoli.film) & (db.moviecast.id ==db.ruoli.persona))
-#film_e_supporti = db((db.film.id==db.formato.film) & (db.supporto.id ==db.formato.supporto))

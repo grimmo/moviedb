@@ -15,7 +15,7 @@
     <dt>Ultima modifica</dt>
     <dd>{{ = media.datamodifica }}</dd>
     <dt>Si trova in</dt>
-    <dd><a href="{{=URL('default','collocazione',args=(media.collocazione.id))}}">{{ = media.collocazione.descrizione }}</a></dd>
+    <dd><a href="{{=URL('collocazione','index',args=(media.collocazione.id))}}">{{ = media.collocazione.descrizione }}</a></dd>
 </dl>
 <h3>Contiene: </h3>
 <ul>

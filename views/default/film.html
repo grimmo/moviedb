@@ -114,7 +114,7 @@
 </div>
 <script> 
     function aggiorna_film() {
-        web2py_component('{{=URL('movie','find_title.load',vars=dict(titolo=film.titolo))}}','openModal');
+        web2py_component('{{=URL('movie','find_title.load',vars=dict(movie_id=film.id))}}','openModal');
 }
 </script>
 {{ pass }}

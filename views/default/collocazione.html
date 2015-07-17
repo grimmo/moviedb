@@ -10,7 +10,6 @@ Questa collocazione contiene {{ = len(contenuto) }} supporti.
     </a>       
 <ul class="unstyled">
     {{ for disco in contenuto: }}
-    {{ lista_film = film_e_supporti(db.formato.supporto==disco).select() }}
     <li>
         <span class="label label-inverse">
             <a href="{{=URL('default','supporto',args=(disco.id))}}">{{ = '%s n. %s' % (disco.tipo.nome,disco.id_originale or disco.id) }}</a>
@@ -20,8 +19,8 @@ Questa collocazione contiene {{ = len(contenuto) }} supporti.
         </span>
     </li>
 <div id="collapsed{{=disco.id}}" class="collapse">
-    {{ for film in lista_film.render(): }}
-    <li>{{ = film.film.titolo }}</li>
+    {{ for film in lista_film: }}
+    <li><a href="{{ =URL('film',film.film.slug) }}">{{ = film.film.titolo }}</a></li>
     {{ pass }}
 </div>
     {{ pass }}

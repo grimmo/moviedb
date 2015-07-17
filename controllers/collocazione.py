@@ -26,4 +26,12 @@ def call():
     """
     return service()
 
-def index(): return dict(message="hello from collocazione.py")
+def index():
+    if request.args(0):
+        return dict(collocazione=db.collocazione[request.args(0)],supporti=db(db.supporto.collocazione == request.args(0)).select(),collocazioni=None)
+    else:
+        return dict(collocazioni=db(db.collocazione.id>0).select(),supporti=None,collocazione=None)
+    
+def aggiungi():
+    form = crud.create(db.collocazione,next='/moviedb/collocazione/index/[id]')
+    return dict(form=form)
