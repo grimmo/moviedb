@@ -2,9 +2,19 @@
 from tmdbsimple import TMDB
 from time import strptime,strftime,sleep
 from urllib import urlencode,urlretrieve
+import os,cPickle
+
+try:
+    apikey_filepath = os.path.join(request.folder, "private", "themoviedb.key")
+    with open(apikey_filepath, 'rb') as tmdb_api_keyfile:
+        TMDB_API_KEY = cPickle.load(tmdb_api_keyfile)
+except:
+    logger.warning('Unable to load API key from %s' % apikey_filepath)
+
 
 # Questa API key macari non dovremmo pubblicarla..
-tmdb = TMDB('d25e780038d6c2ef21b823be1d973de3')
+#tmdb = TMDB('d25e780038d6c2ef21b823be1d973de3')
+tmdb = TMDB(TMDB_API_KEY)
 
 def slugify(text):
     return IS_SLUG(check=False)(text.encode('utf-8'))[0]

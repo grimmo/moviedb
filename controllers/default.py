@@ -147,16 +147,6 @@ def movieandcastedit():
        response.flash = 'form has errors'
     return dict(form=form)
 
-def collocazione():
-    location = db.collocazione(id=request.args(0))
-    if not location:
-        raise HTTP(404)
-    else:
-        response.title = "%s" % location.descrizione
-        contenuto = db(db.supporto.collocazione == request.args(0)).select()
-    return dict(location=location,contenuto=contenuto)
-
-
 def supporto():
     media = db.supporto(id=request.args(0))
     if not media:
@@ -227,50 +217,9 @@ def associamedia():
         if supporti:
             db.formato.supporto.default = supporti.last().id
         suppoform = crud.create(db.supporto,next='associamedia',fields=['tipo','collocazione'],onaccept=on_accept_suppoform)
-        my_extra_element =  A('Nuova colloazione',_href=URL('collocazione','aggiungi',user_signature=True))
+        my_extra_element =  A('Nuova collocazione',_href=URL('collocazione','aggiungi',user_signature=True))
         suppoform[0].insert(-1,my_extra_element)
         return dict(form=crud.create(db.formato,next='film/%s' % session.movie_id),suppoform=suppoform)
-
-def status():
-    return dict(request=request, session=session, response=response)
-
-def create_session(request):
-    return session.connect(request,response,cookie_key='sucaminchia',compression_level=None)
-
-def get_movie_poster():
-    tmdb_id = request.vars.tmdb_id
-    if tmdb_id:
-        response = tmdb_service.fetch_movie_poster(tmdb_id)
-        if response.has_key('errors') and response['errors']:
-            return dict(result=response['errors'])
-        else: redirect(URL('moviedb','default','film.html',args=db(db.film.tmdb_id==tmdb_id).select().last().slug))
-    else:
-        raise HTTP(404,'Did not specify themoviedb id')
-
-#obsoleta
-def fetch_new_movie():
-    tmdb_id = request.vars.tmdb_id
-    if tmdb_id == "":
-       raise HTTP(404,'Missing movie id')
-    else:
-       status = tmdb_service.full_insert_movie(tmdb_id)
-       if type(status) == dict and status['slug']:
-           redirect(URL('moviedb','default','film',args=status['slug']))
-       else:
-           return status
-#obsoleta
-def update_movie():
-    existing_id = request.get_vars.existing_id
-    moviedb_id = request.get_vars.tmdb_id
-    update_query = tmdb_service.big_update_movie(moviedb_id,existing_id)
-    if not update_query['errors']:
-        if not session.brandnew:
-            session.brandnew = existing_id
-        return "jQuery(window).attr('location','%s');" % URL('moviedb','default','film',args=update_query['result'])
-    else:
-        session.errors = existing_id
-        #FIXME: Not good, we shall display errors via ajax
-        return "jQuery(window).attr('location','%s');jQuery('.error_message').html('%s');" % (URL('moviedb','default','film',args=update_query['result']),update_query['errors'])
 
 def tags():
     if not request.args:
@@ -323,7 +272,41 @@ def task_status():
 def task_status_view():
     return dict(heading_text=request.vars.heading,success_message=request.vars.success,failure_message=request.vars.failure,success_url=request.vars.success_url,task_id=request.vars.task)
 
+#obsolete
 """
+def get_movie_poster():
+    tmdb_id = request.vars.tmdb_id
+    if tmdb_id:
+        response = tmdb_service.fetch_movie_poster(tmdb_id)
+        if response.has_key('errors') and response['errors']:
+            return dict(result=response['errors'])
+        else: redirect(URL('moviedb','default','film.html',args=db(db.film.tmdb_id==tmdb_id).select().last().slug))
+    else:
+        raise HTTP(404,'Did not specify themoviedb id')
+
+def fetch_new_movie():
+    tmdb_id = request.vars.tmdb_id
+    if tmdb_id == "":
+       raise HTTP(404,'Missing movie id')
+    else:
+       status = tmdb_service.full_insert_movie(tmdb_id)
+       if type(status) == dict and status['slug']:
+           redirect(URL('moviedb','default','film',args=status['slug']))
+       else:
+           return status
+
+def update_movie():
+    existing_id = request.get_vars.existing_id
+    moviedb_id = request.get_vars.tmdb_id
+    update_query = tmdb_service.big_update_movie(moviedb_id,existing_id)
+    if not update_query['errors']:
+        if not session.brandnew:
+            session.brandnew = existing_id
+        return "jQuery(window).attr('location','%s');" % URL('moviedb','default','film',args=update_query['result'])
+    else:
+        session.errors = existing_id
+        #FIXME: Not good, we shall display errors via ajax
+        return "jQuery(window).attr('location','%s');jQuery('.error_message').html('%s');" % (URL('moviedb','default','film',args=update_query['result']),update_query['errors'])
 @service.json
 def inserisci_film_differito(tmdb_id):
     return scheduler.queue_task('insert_movie',vars=json.dumps({'tmdb_id':tmdb_id}))

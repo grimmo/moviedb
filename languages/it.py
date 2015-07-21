@@ -287,6 +287,7 @@
 'User ID': 'ID Utente',
 'Value already in database or empty': 'Value already in database or empty',
 'value already in database or empty': 'value already in database or empty',
+'Value not allowed': 'Value not allowed',
 'value not in database': 'value not in database',
 'Value not in database': 'Value not in database',
 'Verify Password': 'Verify Password',
