@@ -13,7 +13,7 @@ if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
     #db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'])
     #'w2p_dba'@'localhost' IDENTIFIED BY 'moviedbrul3z!'
-    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=False,check_reserved=['mysql'],pool_size=5)
+    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=True,check_reserved=['mysql'],pool_size=5)
     #db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=False,check_reserved=['mysql'],pool_size=5)
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
@@ -166,8 +166,42 @@ db.define_table('generi',
       Field('hidden','boolean',default=False,readable=False),
       Field('film','reference film')
       )
-       
 
+db.define_table('tvshow',
+      Field('title','string',length=255),
+      Field('slug',unique=True,length=255,compute=lambda row: row.title and IS_SLUG(check=False)(row.title)[0]),
+      Field('seasonstot','integer'),
+      Field.Virtual('seasonown',lambda row:db(db.season.tvshow == row.id).count()),
+      Field.Virtual('complete',lambda row:row.seasonsown == row.seasonstot),
+      Field('poster','upload'),
+      Field('abstract','text'),
+      format='%(title)s')
+
+db.define_table('season',
+      Field('tvshow','reference tvshow',requires = IS_IN_DB(db, db.tvshow.id, '%(title)s')),
+      Field('number','integer'),
+      Field('episodestot','integer'),
+      Field.Virtual('episodesown',lambda row:db((db.episodes.tvshow == row.tvshow) and (db.episode.season == row.id)).count()),
+      Field.Virtual('complete',lambda row:row.episodestot == row.episodesown),
+      format='%(tvshow)s - Season %(number)i')
+
+db.define_table('episode',
+      Field('tvshow','reference tvshow',requires = IS_IN_DB(db, db.tvshow.id, '%(title)s')),
+      Field('season','reference season'),
+      Field('number','integer'),
+      Field('title','string',length=255),
+      Field('audio','list:string'),
+      Field('subs','list:string'),
+      Field('media','list:string'))
+
+db.define_table('tvshow_media',
+     Field('seasons','list:reference season'),
+     Field('title','reference tvshow'),
+     Field('supporto','reference supporto'))
+
+
+db.episode.audio.requires = IS_IN_SET(['ITA','ENG','ITA/ENG','ITA/OTH','OTH'])
+db.episode.subs.requires = IS_IN_SET(['ITA','ENG','ITA/ENG','ITA/OTH','OTH'])
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
 db.supporto.tipo.requires = IS_IN_DB(db,db.tiposupporto.id,'%(nome)s')
 db.supporto.collocazione.requires= IS_IN_DB(db,db.collocazione.id,'%(descrizione)s')

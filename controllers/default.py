@@ -10,7 +10,7 @@
 #########################################################################
 #import xmlrpclib
 import cPickle,os
-from tmdbsimple import TMDB
+#from tmdbsimple import TMDB
 import json
 
 #tmdb_service = xmlrpclib.ServerProxy(URL('tmdb','call',args=['xmlrpc'],scheme=True,host=True),allow_none=True)
