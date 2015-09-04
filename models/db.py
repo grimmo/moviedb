@@ -195,13 +195,12 @@ db.define_table('episode',
       Field('media','list:string'))
 
 db.define_table('tvshow_media',
-     Field('seasons','list:reference season'),
-     Field('title','reference tvshow'),
-     Field('supporto','reference supporto'))
+     Field('episode','list:reference episode'),
+     Field('support','reference supporto'))
 
 
 db.episode.audio.requires = IS_IN_SET(['ITA','ENG','ITA/ENG','ITA/OTH','OTH'])
-db.episode.subs.requires = IS_IN_SET(['ITA','ENG','ITA/ENG','ITA/OTH','OTH'])
+db.episode.subs.requires = IS_IN_SET(['','ITA','ENG','ITA/ENG','ITA/OTH','OTH'])
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
 db.supporto.tipo.requires = IS_IN_DB(db,db.tiposupporto.id,'%(nome)s')
 db.supporto.collocazione.requires= IS_IN_DB(db,db.collocazione.id,'%(descrizione)s')
@@ -225,4 +224,5 @@ db.film.tags = Field.Method(lambda row: db(db.tags.film.contains(row.film.id)).s
 db.moviecast.recitati = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == False) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
 db.moviecast.diretti = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == True) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
 db.supporto.contenuti = Field.Method(lambda row:[formato for formato in db((db.formato.supporto == row.supporto.id) & (db.formato.film == db.film.id)).select()])
+db.supporto.tvshow_contenuti = Field.Method(lambda row:[serie for serie in db(db.tvshow_media.support == row.supporto.id)])
 db.formato.film.widget = SQLFORM.widgets.autocomplete(request, db.film.titolo, limitby=(0,10), min_length=2,id_field=db.film.id)

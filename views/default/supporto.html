@@ -23,3 +23,8 @@
     <li><a href="{{=URL('default','film',args=(video.film.id))}}">{{ =video.film.titolo }}</a>&nbsp;in formato&nbsp;<em>{{=video.formato.tipo}}</em>&nbsp;<a href="{{ =URL('formato','edit',vars=dict(movie_id=video.film.id,media_id=media.id)) }}"><i class="icon-pencil icon-large"></i></a></li>
 {{ pass }}
 </ul>
+<ul>
+    {{ for episode in media.tvshow_contenuti(): }}
+    <li>{{ = episode }}</li>
+    {{ pass }}
+</ul>
