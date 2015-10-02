@@ -39,7 +39,7 @@ def find_title():
 @service.json
 def trovatitolo(query,update=False):
     search = tmdb.Search()
-    reply = search.movie({'query': query,'language':'it'})
+    reply = search.movie(query=query,language='it')
     risultati = []
     for r in search.results:
         if not update:

@@ -52,7 +52,7 @@ def add_role_for_person(person_id,movie_id,director=False):
 def fetch_movie(tmdb_id,movie_id=False):
     logging.debug('Fetching details from tmdb.org for %s' % tmdb_id)
     movie = tmdb.Movies(tmdb_id)
-    status = cache.ram('movieinfo_%s' % tmdb_id,lambda: movie.info(params={'language':'it','append_to_response':'credits'}), time_expire=300)
+    status = cache.ram('movieinfo_%s' % tmdb_id,lambda: movie.info(language='it',append_to_response='credits'), time_expire=300)
     logger.debug('tmdb movie info status for %s:%s' % (tmdb_id,status))
     movie.year = strftime('%Y',strptime(movie.release_date,u'%Y-%m-%d'))
     movie.slug = slugify("%s %s" % (movie.title,movie.year))
@@ -109,83 +109,6 @@ def fetch_new_movie(tmdb_id):
 
 def fetch_existing_movie(movie_id,tmdb_id):
     return fetch_movie(tmdb_id,movie_id=movie_id)
-
-"""
-def fetch_existing_movie(movie_id,tmdb_id):
-    movie = tmdb.Movies(tmdb_id)
-    status = cache.ram(tmdb_id,lambda: movie.info(params={'language':'it','append_to_response':'credits'}),prefix='movieinfo_', time_expire=300)
-    logger.debug('tmdb movie info status for %s:%s' % (tmdb_id,status))
-    movie.year = strftime('%Y',strptime(movie.release_date,u'%Y-%m-%d'))
-    movie.slug = slugify("%s %s" % (movie.title,movie.year))
-    conf = tmdb.Configuration()
-    tmdb_conf = cache.disk('tmdb_conf',lambda: conf.info(), time_expire=3600)
-    base_url = tmdb_conf['images']['base_url']
-    poster_size = tmdb_conf['images']['poster_sizes'][4] # larghezza locandina 500px AKA 'w500'
-    file_path = movie.poster_path
-    complete_poster_url='%s/%s/%s' % (base_url,poster_size,file_path)
-    logger.debug('Complete poster url:%s' % complete_poster_url)
-    # Questo è il path in cui viene salvata la locandina
-    file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
-    urlretrieve('%s' % complete_poster_url,file_locandina)
-    floca = open(file_locandina, 'rb')
-    logger.debug('Attempting to update existing movie:%s...' % movie_id)
-    f = db(db.film.id == movie_id).update(**{'slug':movie.slug,'titolo':movie.title,'anno':movie.year,'trama':movie.overview,'anno':movie.year,'tmdb_id':movie.id,'locandina':floca})
-    logger.debug('Movie update result:%s' % f)
-    if hasattr(f,'errors') and f.errors:
-        #return "Errors detected: %s" % f.errors.keys()
-        raise ValueError('Error during update:%s' % f.errors)
-    else:
-        db.commit()
-        logger.debug('Movie update for %s successful.' % f)
-        floca.close()
-        logger.debug('Adding cast & crew for %s' % f)
-        for persona in movie.credits['cast']:
-            logger.debug('Adding %s' % persona['name'])
-            try:
-                db.moviecast.update_or_insert(nome=persona['name'],tmdb_id=persona['id'],slug=slugify(persona['name']))
-            except db._adapter.driver.IntegrityError:
-                logger.error('Error adding cast %s' % persona)
-                raise
-            else:
-                logger.debug('%s added successfully' % persona['name'])
-                db.commit()
-            try:
-               # db.ruoli.update_or_insert(((db.ruoli.film==movie_id) & (db.ruoli.persona == persona['id']) & (db.ruoli.regista==False)),film=movie_id,persona=persona['id'],regista=False)
-               logger.debug('Adding %s as cast for %s' % (persona['name'],movie_id))
-               persona = db(db.moviecast.tmdb_id == persona['id']).select().first()
-               db.ruoli.update_or_insert(film=movie_id,persona=persona.id,regista=False)
-            except db._adapter.driver.IntegrityError:
-                logger.error('Error adding role for %s' % persona.nome)
-                raise
-            else:
-                db.commit()
-                logger.debug('Successfully added role for %s' % persona.nome)
-        for regista in movie.credits['crew']:
-            if regista['job'] == 'Director':                
-                logger.debug('Adding %s to cast database' % regista['name'])
-                try:
-                    #db.moviecast.update_or_insert(db.moviecast.tmdb_id == regista['id'],nome=regista['name'],tmdb_id=regista['id'],slug=slugify(regista['name']))
-                    db.moviecast.update_or_insert(nome=regista['name'],tmdb_id=regista['id'],slug=slugify(regista['name']))
-                except db._adapter.driver.IntegrityError:
-                    logger.error('Error adding %s' % regista['name'])
-                    raise
-                else:
-                    logger.debug('%s added successfully' % regista['name'])
-                    db.commit()
-                try:
-                    logger.debug('Adding %s as director in %s' % (regista['name'],movie_id))
-                    regista = db(db.moviecast.tmdb_id == regista['id']).select().first()
-                    db.ruoli.update_or_insert(film=movie_id,persona=regista.id,regista=True)
-                except db._adapter.driver.IntegrityError:
-                    raise
-                    logger.error('Error adding role for %s' % regista.nome)
-                else:
-                    db.commit()
-                    logger.debug('Successfully added %s as director' % regista.nome)
-        db.commit()
-        logger.debug('Final db commit')
-        return db.film[movie_id].slug
-"""
 
 from gluon.scheduler import Scheduler
 scheduler = Scheduler(db)
