@@ -64,7 +64,7 @@ def fetch_movie(tmdb_id,movie_id=False):
     complete_poster_url='%s/%s/%s' % (base_url,poster_size,file_path)
     logger.debug('Complete poster url:%s' % complete_poster_url)
     # Questo è il path in cui viene salvata la locandina
-    file_locandina = 'applications/moviedb/uploads/%s' % file_path.split('/')[1]
+    file_locandina = 'applications/moviedb/static/images/locandine/%s' % file_path.split('/')[1]
     logger.debug('Attempting to download movie poster for %s from %s' % (tmdb_id,complete_poster_url))
     try:
         urlretrieve('%s' % complete_poster_url,file_locandina)

@@ -8,13 +8,8 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 ## - call exposes all registered services (none by default)
 #########################################################################
-#import xmlrpclib
 import cPickle,os
-#from tmdbsimple import TMDB
 import json
-
-#tmdb_service = xmlrpclib.ServerProxy(URL('tmdb','call',args=['xmlrpc'],scheme=True,host=True),allow_none=True)
-#tmdb_service = xmlrpclib.ServerProxy('http://127.0.0.1:8000/moviedb/tmdb/call/xmlrpc/',allow_none=True)
 
 def index():
     session.forget()
@@ -26,10 +21,6 @@ def index():
     #return dict(rows=rows,page=page,items_per_page=items_per_page)
     film = db(db.film.id>0).select(limitby=limitby,orderby=[db.film.titolo,db.film.anno])
     return dict(film=film,page=page,items_per_page=items_per_page)
-
-def index_new():
-    grid = SQLFORM.grid(db.film,fields=[db.film.titolo,db.film.registi],editable=False,deletable=False)
-    return locals()
 
 # Ok, the next three functions are ugly and it can be done much better than this, but for now it just works.
 def movies_by_flag(limitby,flag=False):

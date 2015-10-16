@@ -28,16 +28,16 @@ Notice:
 even if the function is called via ajax.
 
 '''}}
-<div>
-<a href="#close" title="Close" class="close">X</a>
+<!-- <div>
+<a href="#close" title="Close" class="close">X</a> -->
 {{ if risultati: }}
-<h1>Ho trovato questi film:</h1>
 <span class="titolitrovati">
+    <ul class="list-unstyled">
     {{ for risultato in risultati: }}
         <li><a href="{{ = risultato['url'] }}">{{ = risultato['titolo'] }}</a> ({{ = risultato['anno'] }})</li>
     {{ pass }}
+    </ul>
 </span>
-</div>
 {{ else: }}
 <h1>Inserisci titolo da cercare</h1>
 <span class="titolitrovati">
