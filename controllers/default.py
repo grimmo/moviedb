@@ -42,7 +42,6 @@ def unseen():
     limitby=(page*items_per_page,(page+1)*items_per_page+1)
     return dict(film=movies_by_flag(limitby),page=page,items_per_page=items_per_page)
 
-
 def user():
     """
     exposes:
@@ -77,16 +76,18 @@ def call():
     """
     return service()
 
+def pippo():
+    return dict()
+
 def cerca():
-    #form=SQLFORM(db.film,db.moviecast,fields=['slug'])
-    #if form.vars.moviesearch != "" and form.validate(session=None, formname='cercaform'):
-    if request.vars.moviesearch and request.vars.moviesearch != "":
-        chiave = request.vars.moviesearch
-        risultati_film = db(db.film.slug.contains(chiave)).select()
-        risultati_attori = db(db.moviecast.slug.contains(chiave)).select()
-        return dict(risultati_film=risultati_film,risultati_attori=risultati_attori)
+    db.film.titolo.widget = SQLFORM.widgets.autocomplete(request, db.film.titolo, limitby=(0,10), min_length=2,id_field=db.film.slug)
+    form=SQLFORM(db.film,fields=['titolo'])
+    if form.validate():
+      redirect(URL('film',args=form.vars.titolo))
     else:
-        return dict(risultati_film=None,risultati_attori=None)
+      submit = form.element('input',_type='submit')
+      submit['_style'] = 'display:none;'
+      return dict(form=form)
 
 @auth.requires_signature()
 def data():
@@ -168,7 +169,7 @@ def persona():
 
 def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
-
+"""
 def movieselect():
     "ajax dropdown search demo"
     return dict()
@@ -182,7 +183,7 @@ def movie_selector():
     return DIV([LI(A(tit,_href=URL('default','film',args=sl),_tabindex="-1")) for sl,tit in titoli_film]+
     [LI(_class="divider")]+[LI(A(nome,_href=URL('default','persona',args=sl),_tabindex="-1")) for nome,sl in nomi_cast]
     )
-
+"""
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)
@@ -247,18 +248,3 @@ def add_tmdb_api_key():
     else:
         session.flash = "Please input your api key"
     return dict(form=form)
-
-@service.json
-def task_status():
-    """Questa vista ritorna in formato JSON le informazioni sullo stato di un task schedulato"""
-    id_task = request.vars.task
-    task = db.scheduler_task[id_task]
-    if task and task.status == "COMPLETED":
-        result = db(db.scheduler_run.task_id == task.id and db.scheduler_run.status == 'COMPLETED').select().last().run_result
-        result.replace('"',"'")
-    else:
-        result = None
-    return dict(id=task.id,status=task.status,nextrun=task.next_run_time,result=result)
-
-def task_status_view():
-    return dict(heading_text=request.vars.heading,success_message=request.vars.success,failure_message=request.vars.failure,success_url=request.vars.success_url,task_id=request.vars.task)

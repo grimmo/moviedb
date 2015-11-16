@@ -28,45 +28,18 @@ Notice:
 even if the function is called via ajax.
 
 '''}}
-<div class="navbar navbar-inverse navbar-fixed-top">    
-    <div class='navbar-inner'>
-        <div class='container'>
-            <a class='brand' href="/moviedb">MovieDB</a>            
-            <!-- <form class="navbar-search pull-left" onsubmit="cerca(document.getElementById('chiavericerca').value); return false" >                 -->
-            <form class="navbar-search" method="post">                         
-            <input id="chiavericerca" name="slug" type="text" class="search-query span3" placeholder="Cerca" autocomplete="off">            
-            <div class="icon-search"></div>
-            <!-- <input type="submit" value = ""/> -->
-            <input type="hidden" name="_formname" value="cercaform" />                            
-            </form>
-            <li class='nav dropdown'>                
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                    <i class="icon-plus-sign icon-2x"></i>
-                    <!-- <b class="caret"></b> -->
-                </a>
-                <ul class="dropdown-menu">
-                <li><a href="{{=URL('tmdb','cerca',extension='html')}}" title="Aggiungi nuovo film da themoviedb.org">Fetch new movie</a></li>
-                <li><a href="{{=URL('default','nuovosupporto',extension='html')}}" title="Crea un nuovo supporto">Add new media</a></li>
-            </ul>
-        </div>
-    </div>
-</div>     
-{{ if risultati_film: }}    	    	
-	<div id="risultati" class="alert">    
-		<button type="button" class="close" data-dismiss="alert">&times;</button>
-    		{{=risultati_film}}        
-	</div>
-{{ elif risultati_attori: }}
-    <div id="risultati" class="alert">    
-    	<button type="button" class="close" data-dismiss="alert">&times;</button>	    	
-    		{{=risultati_attori}}
-	</div>
-{{ pass }}    	
+<style>
+#suggestions { position: relative; }
+.suggestions { background: white; border: solid 1px #55A6C8; }
+.suggestions DIV { padding: 2px 4px 2px 4px; }
+</style>
+
+<form>
+ <input type="text" id="cercatitolo" name="titolo" style="width: 250px" /><br />
+ <div style="position: absolute;" id="suggestions"
+      class="suggestions"></div>
+</form>
 <script>
-$(document).ready(function() {
-	$('#chiavericerca input').typeahead({
-  		source: '/moviedb/default/call/json/ajaxsearch'
-	});
-   
-});
+jQuery("#cercatitolo").keyup(function(){
+      ajax('{{=URL('default', 'ajaxsearch')}}', ['titolo'], 'suggestions')});
 </script>
