@@ -11,12 +11,24 @@ def call():
     """
     return service()
 
+def is_task_already_queued(tmdb_id,movie_id):
+    "Check if task for the same movie has already been queued"
+    dizio =   '{"movie_id": "%s", "tmdb_id": "%s"}' % (movie_id,tmdb_id)
+    #return db((db.scheduler_task.vars == dizio) & (db.scheduler_task.status == 'QUEUED')).count() > 0
+    return db(db.scheduler_task.vars == dizio).count() > 0
+
+def verifica():
+    return dict(conteggio=is_task_already_queued(4427,12101))
 
 def fetch_existing():
-    task = scheduler.queue_task(fetch_existing_movie,pvars=dict(tmdb_id=request.vars.tmdb_id,movie_id=request.vars.movie_id))
-    #session.flash = "Update movie details for %s queued with id %s" % (request.vars.movie_id,task.id)
-    #redirect(URL('default','task_status_view',vars={'task':task.id,'heading':'Aggiornamento dettagli film','success':'dettagli del film aggiornati','failure':'Errore durante l\'aggiornamento dei dettagli del film','success_url':URL('moviedb','default','film',args=(db.film[request.vars.movie_id].slug))}))
-    return dict(task_id=task.id)
+    # check if task to fetch details for this movie has already been queued
+    if is_task_already_queued(request.vars.tmdb_id,request.vars.movie_id):
+        #task_info = db((db.scheduler_task.vars == '{"movie_id": "%s", "tmdb_id": "%s"}' % (request.vars.movie_id,request.vars.tmdb_id)) & (db.scheduler_task.status == 'QUEUED')).select().last()
+        task_info = db(db.scheduler_task.vars == '{"movie_id": "%s", "tmdb_id": "%s"}' % (request.vars.movie_id,request.vars.tmdb_id)).select().last()
+    else:
+        task_info = scheduler.queue_task(fetch_existing_movie,pvars=dict(tmdb_id=request.vars.tmdb_id,movie_id=request.vars.movie_id))
+    task_details = db.scheduler_task[task_info.id]
+    return dict(task_details=task_details)
 
 def fetch_new():
     task = scheduler.queue_task(fetch_new_movie,pvars=dict(tmdb_id=request.vars.tmdb_id))

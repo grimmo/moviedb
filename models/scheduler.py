@@ -3,6 +3,7 @@ from time import strptime,strftime,sleep
 from urllib import urlencode,urlretrieve
 import tmdbsimple as tmdb
 import os,cPickle
+import traceback
 
 try:
     apikey_filepath = os.path.join(request.folder, "private", "themoviedb.key")
@@ -60,17 +61,18 @@ def fetch_movie(tmdb_id,movie_id=False):
     tmdb_conf = cache.disk('tmdb_conf',lambda: conf.info(), time_expire=3600)
     base_url = tmdb_conf['images']['base_url']
     poster_size = tmdb_conf['images']['poster_sizes'][4] # larghezza locandina 500px AKA 'w500'
-    file_path = movie.poster_path
-    complete_poster_url='%s/%s/%s' % (base_url,poster_size,file_path)
+    file_locandina = "locandina_%s.jpg" % movie.slug
+    complete_poster_url='%s/%s/%s' % (base_url,poster_size,movie.poster_path)
     logger.debug('Complete poster url:%s' % complete_poster_url)
     # Questo è il path in cui viene salvata la locandina
-    file_locandina = 'applications/moviedb/static/images/locandine/%s' % file_path.split('/')[1]
+    path_locandina = 'applications/moviedb/static/images/locandine/%s' % file_locandina
     logger.debug('Attempting to download movie poster for %s from %s' % (tmdb_id,complete_poster_url))
     try:
-        urlretrieve('%s' % complete_poster_url,file_locandina)
+        urlretrieve('%s' % complete_poster_url,path_locandina)
     except:
         logger.error('Failed to download poster')
-    floca = open(file_locandina, 'rb')
+        logger.error(traceback.print_exc())
+    floca = open(path_locandina, 'rb')
     logger.debug('Attempting to insert movie...')
     if not movie_id:
         f = db.film.validate_and_insert(**{'slug':movie.slug,'titolo':movie.title,'anno':movie.year,'trama':movie.overview,'anno':movie.year,'tmdb_id':movie.id,'locandina':floca})
@@ -101,6 +103,7 @@ def fetch_movie(tmdb_id,movie_id=False):
                 logger.error('Failed to insert %s into cast database' % persona['name'])                
     logger.debug('Cast & Crew completed. Committing again')
     db.commit()
+    floca.close()
     logger.debug('Final db commit')
     return film.slug
 

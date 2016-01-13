@@ -27,19 +27,14 @@ Notice:
 - no need to return a string
 even if the function is called via ajax.
 
-'''}}{{if len(response._vars)==1:}}{{=response._vars.values()[0]}}{{else:}}{{=BEAUTIFY(response._vars)}}{{pass}}
-<h4 class="modal-title">{{=T('Aggiornamento dati in corso')}}</h4>
+'''}}
+<h4>Elaborazione task {{ = task_details.id }} in corso...</h4>
+<p id="statustext" class="text-center">{{= task_details.status }}</p>
 <span class="titolitrovati">
-<div class="progress">
-<div id = "thepb" class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-<!-- <span class="sr-only">Please wait...</span> -->
-</div>
-<div id="stato">
-<p id="statustext" class="text-center">Elaborazione in corso...</p>
-</div>
-{{ if task_id: }}
-{{ else: }}
-    <p>
-        Impossibile ottenere task id</p>
-    </p>
-{{ pass }}
+<!-- <div class="center-block"><img src="{{=URL('static','images',args=('ajax-loader.gif'))}}"></div> -->
+    <div class="progress">
+        <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="Attendere..." aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+        <span class="sr-only">Please wait...</span>
+        </div>
+    </div>
+</span>
