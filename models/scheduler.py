@@ -52,7 +52,8 @@ def add_role_for_person(person_id,movie_id,director=False):
 def fetch_movie(tmdb_id,movie_id=False):
     logging.debug('Fetching details from tmdb.org for %s' % tmdb_id)
     movie = tmdb.Movies(tmdb_id)
-    status = cache.ram('movieinfo_%s' % tmdb_id,lambda: movie.info(params={'language':'it','append_to_response':'credits'}), time_expire=300)
+    #status = cache.ram('movieinfo_%s' % tmdb_id,lambda: movie.info(params={'language':'it','append_to_response':'credits'}), time_expire=300)
+    status = cache.ram('movieinfo_%s' % tmdb_id,lambda: movie.info(language='it',append_to_response='credits'), time_expire=300)
     logger.debug('tmdb movie info status for %s:%s' % (tmdb_id,status))
     movie.year = strftime('%Y',strptime(movie.release_date,u'%Y-%m-%d'))
     movie.slug = slugify("%s %s" % (movie.title,movie.year))

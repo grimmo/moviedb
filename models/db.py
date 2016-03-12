@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import datetime
+import tmdbsimple as tmdb
 
 #########################################################################
 ## This scaffolding model makes your app work on Google App Engine too
@@ -13,7 +15,7 @@ if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
     #db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'])
     #'w2p_dba'@'localhost' IDENTIFIED BY 'moviedbrul3z!'
-    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=True,check_reserved=['mysql'],pool_size=5)
+    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',check_reserved=['mysql'],pool_size=5)
     #db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=False,check_reserved=['mysql'],pool_size=5)
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
@@ -86,7 +88,7 @@ use_janrain(auth, filename='private/janrain.key')
 # auth.enable_record_versioning(db)
 
 
-import datetime
+
 now = datetime.datetime.now()
 
 # Tabelle "ereditate" da dbfilm su django
