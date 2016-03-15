@@ -1,0 +1,30 @@
+{{extend 'layout.html'}}
+<h1><i class="icon-save"></i>&nbsp;{{= media.tipo.nome }}&nbsp;n.
+    {{ if media.id_originale: }}
+    {{ = media.id_originale }}&nbsp;<i class="glyphicon-asterisk" title="Imported from dbfilm"></i>
+    {{ else: }}
+		{{ = media.id }}
+    {{ pass }}
+</h1>
+<a class="btn btn-large btn-primary" href="{{ = URL('formato','edit',vars=dict(media_id=media.id))}}"><i class="icon-plus"></i>&nbsp;Aggiungi film</a>
+<dl class="dl-horizontal">
+    <dt>Creato il</dt>
+    <dd>{{ = media.datacreazione }}</dd>
+    <dt>Ultima modifica</dt>
+    <dd>{{ = media.datamodifica }}</dd>
+    <dt>Si trova in</dt>
+    <dd><a href="{{=URL('collocazione','index',args=(media.collocazione.id))}}">{{ = media.collocazione.descrizione }}</a></dd>
+</dl>
+<h3>Contiene: </h3>
+<ul>
+{{ for video in media.contenuti(): }}
+    <li><a href="{{=URL('default','film',args=(video.film.id))}}">{{ =video.film.titolo }}</a>&nbsp;in formato&nbsp;<em>{{=video.formato.tipo}}</em>&nbsp;<a href="{{ =URL('formato','edit',vars=dict(movie_id=video.film.id,media_id=media.id)) }}"><i class="icon-pencil icon-large"></i></a></li>
+{{ pass }}
+</ul>
+<!--
+<ul>
+     for episode in media.tvshow_contenuti(): 
+    <li> = episode </li>
+    pass 
+</ul>
+-->

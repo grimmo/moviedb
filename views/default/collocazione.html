@@ -1,0 +1,27 @@
+{{extend 'layout.html'}}
+<div class="hero-unit">
+    <h1><a href="#">{{ = response.title }}</a></h1>
+<p>
+</p>
+</div>
+Questa collocazione contiene {{ = len(contenuto) }} supporti.
+<a class="pull-right" href="#">
+<img class="media-object" src="{{=URL('static','images',args=('spindle.jpg'))}}">
+    </a>       
+<ul class="unstyled">
+    {{ for disco in contenuto: }}
+    <li>
+        <span class="label label-inverse">
+            <a href="{{=URL('default','supporto',args=(disco.id))}}">{{ = '%s n. %s' % (disco.tipo.nome,disco.id_originale or disco.id) }}</a>
+        </span>
+        <span class="badge badge-inverse" data-toggle="collapse" data-target="#collapsed{{=disco.id}}">
+            <a href="#">{{ = len(lista_film)}} &nbsp; film&nbsp;<i class="icon-chevron-down"></i></a>
+        </span>
+    </li>
+<div id="collapsed{{=disco.id}}" class="collapse">
+    {{ for film in lista_film: }}
+    <li><a href="{{ =URL('film',film.film.slug) }}">{{ = film.film.titolo }}</a></li>
+    {{ pass }}
+</div>
+    {{ pass }}
+</ul>

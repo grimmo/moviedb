@@ -1,0 +1,15 @@
+{{extend 'layout.html'}}
+<div class="page-header">
+    <h1>Add new media to {{ =A("%s (%s)" %(db.film[session.movie_id].titolo,db.film[session.movie_id].anno),_href=URL('default','film',args=db.film[session.movie_id].slug)) }}</h1>
+</div>
+{{ =form }}
+{{ try: }}
+{{ if suppoform: }}
+<button class="btn btn-warning" onclick="jQuery('.formsupporto').slideToggle()">Add media <i class="icon-plus"></i></button>
+<button class="btn" onclick="parent.history.back();">Go back</button>
+<div class="formsupporto hidden" id="formsupporto">
+{{ =suppoform }}    
+</div>
+{{ pass }}
+{{ except: }}
+{{ pass }}

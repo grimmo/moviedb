@@ -1,0 +1,16 @@
+{{extend 'layout.html'}}
+<div class="page-header dropdown">
+<form class="search-query" onsubmit="return;false">
+<a class="dropdown-toggle" id="toggleresult" role="button" data-toggle="dropdown" data-target="#"> 
+<div class="input-prepend">
+<span class="add-on"><i class="icon-search icon-black"></i></span>
+<input type="text" id="moviesearch" name="moviesearch" style="width: 250px" class="span2" data-toggle="dropdown" placeholder="" autocomplete="off" onclick="$('#dropdown_risultati').toggle();"></div></a>
+<ul class="dropdown-menu" role="menu" aria-labelledby="moviesearch" id="dropdown_risultati">
+<div id="risultati_ricerca"></div>    
+</ul>
+</form>
+</div>
+<script>
+jQuery("#moviesearch").keyup(function(){
+      ajax('movie_selector', ['moviesearch'], 'risultati_ricerca')});
+</script>

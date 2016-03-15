@@ -1,0 +1,31 @@
+{{extend 'layout.html'}}
+<h1>Inserisci il titolo da cercare</h1>
+<button onclick="giao();">
+    Giao
+</button>
+<script>
+// Using YQL and JSONP
+function giao() {
+$(document).ready(function() {
+            var surl = "http://ip.jsontest.com/?callback=showIP";
+            $.ajax({
+                type: 'GET',
+                url: surl,
+                crossDomain: true,
+                contentType: "application/json; charset=utf-8",
+                //data: { UserID: 1234 },
+                dataType: "jsonp",
+                success: function(msg) {
+                    $.each(msg, function(name, value) {
+                        console.log(msg);
+                    });
+                },               
+                async: false,
+                cache: false
+            });
+        });
+}
+    function showIP(address) {
+    alert('Il tuo IP: '+address.ip);
+    }
+</script>

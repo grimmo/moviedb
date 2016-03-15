@@ -1,0 +1,29 @@
+{{extend 'layout.html'}}
+<div class="page-header">
+<h1>{{ = persona.nome }}</h1>
+{{=T('played in the following movies:') }}
+<ul>
+{{ for film in persona.recitati(): }}
+    <li>{{ = A(film.titolo,_href=URL('default','film',args=film.slug)) }}</li>
+{{ pass }}
+</ul>
+{{=T('directed the following movies:') }}
+<ul>
+{{ for film in persona.diretti(): }}
+    <li>{{ = A(film.titolo,_href=URL('default','film',args=film.slug)) }}</li>
+{{ pass }}
+</ul>
+    
+{{ if tmdb_data: }}
+	<dt>
+        <dd><strong>Nato il</strong>&nbsp;{{ = tmdb_data['birthday'] }}</dd>
+        <dd><strong>Luogo di nascita</strong>&nbsp;{{ = tmdb_data['place_of_birth'] }}</dd>
+<dd>{{ =A('Visualizza la sua scheda su themoviedb.org',_href='http://www.themoviedb.org/person/%s-%s' % (tmdb_data['id'],persona.slug)) }}</dd>       
+</dt>       
+<br />
+<strong>Biografia</strong>
+<blockquote>
+{{ = tmdb_data['biography'] }}
+</blockquote>		
+{{ pass }}
+</div>

@@ -1,0 +1,35 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+<div id="elenco">
+    <table class="table table-striped table-hover table-condensed table-responsive">
+        <thead><th>Titolo</th><th>Anno</th><th>Regia</th></thead>
+        <tbody>
+{{for i,f in enumerate(film):}}
+    {{if i==items_per_page: break}}
+    {{ if f.visto: }}
+    <tr>
+    {{ else: }}
+    <tr class="warning">
+    {{ pass }}
+        <td>{{=A("%s" % f.titolo,_href=URL('default','film',args=(f.slug)))}}</td>
+        <td>{{ = f.anno }}</td>
+        <td>{{ for regista in f.registi(): }}
+                {{=A(regista.nome,_href=URL('default','persona',args=(regista.slug)))}}&nbsp;
+            {{ pass }}
+        </td>
+</tr>
+{{pass}}
+        </tbody>
+    </table>
+</div>
+
+<nav>
+  <ul class="pager">
+    {{if page:}}
+    <li class="previous"><a href="{{=URL(args=[page-1])}}"><span aria-hidden="true">&larr;</span> {{=T('Precedente')}}</a></li>
+    {{ pass }}
+    {{if len(film)>items_per_page:}}
+    <li class="next"><a href="{{=URL(args=[page+1])}}">{{=T('Successiva')}} <span aria-hidden="true">&rarr;</span></a></li>
+    {{ pass }}
+  </ul>
+</nav>

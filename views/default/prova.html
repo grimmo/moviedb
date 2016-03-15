@@ -1,0 +1,32 @@
+{{extend 'layout.html'}}
+<div class="navbar navbar-inverse navbar-fixed-top">    
+    <div class='navbar-inner'>
+        <div class='container'>
+            <a class='brand'>MovieDB</a>
+            <ul class='nav'>
+                <li><a>Item 1</a></li>
+                <li><a>Item 2</a></li>
+            </ul>
+            <!-- <form class="navbar-search pull-left" onsubmit="cerca(document.getElementById('chiavericerca').value); return false" >                 -->
+            <form class="navbar-search pull-left" method="post">            
+            <input id="chiavericerca" name="slug" type="text" class="search-query" placeholder="Cerca">
+            <input type="submit" />
+            <input type="hidden" name="_formname" value="cercaform" />            
+            </form>
+        </div>
+    </div>
+</div>
+<span id="elenco">
+    {{=risultati_film}}    
+    {{=risultati_attori}}    
+</span>
+<script>
+function cerca(chiave)
+{
+   $.post('cerca.json', {'chiave': chiave },
+   function(data) {
+     $('#elenco').text(data);
+       //display_risultati(data)
+     });
+}
+</script>

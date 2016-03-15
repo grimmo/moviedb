@@ -1,0 +1,91 @@
+{{extend 'layout.html'}}
+<ul class="nav nav-tabs" id="miomenu" role="tablist">
+<li role="presentation" class="active"><a href="#main" data-toggle="tab" aria-controls="home" role="tab">Generale</a></li>
+<li role="presentation"><a href="#cast" data-toggle="tab" aria-controls="cast" role="tab">Cast</a></li>
+<li role="presentation"><a href="#media" data-toggle="tab" aria-controls="media" role="tab">Supporti</a></li>
+</ul>
+<h1>{{ = film.titolo }}
+{{ if film.anno <> 0: }}
+    ({{= film.anno }})
+{{ pass }}
+<small>
+{{ = T('diretto da') }}
+{{ for regista in film.registi(): }}
+    {{=A(regista.nome,_href=URL('default','persona',args=(regista.slug)))}}&nbsp;
+{{ pass }}
+</small>
+{{ if film.visto: }}
+    <span class="label label-success"><span class="glyphicon glyphicon-sunglasses" aria-label="You have already seen this movie"></span></span>
+{{ else: }}
+    <span class="label label-danger"><span class="glyphicon glyphicon-eye-close" aria-label="You haven't seen this movie"></span></span>
+{{ pass }}
+{{ if film.masterizzato(): }}
+    <span class="label label-success"><span class="glyphicon glyphicon-floppy-saved" title="Questo film è associato a uno o più supporti"></span></span>
+{{ else: }}
+    <span class="label label-danger"><span class="glyphicon glyphicon-floppy-remove" title="Questo film non è associato a nessun supporto"></span></span>
+{{ pass }}
+</h1>
+<div class="tab-content">
+    <div role="tabpanel" class="tab-pane active" id="main">
+        <div class="pull-right btn-group btn-group-vertical" role="group" aria-label="homebuttons">
+        <ul class="list-unstyled">
+            <li><a class="btn btn-default btn-lg" role="button" href="#" onclick="window.location='{{=URL('default','edit',args=film.id)}}'"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a></li>
+            {{ if film.tmdb_id: }}
+                <li>
+                    <a class="btn btn-default btn-lg" role="button" data-toggle="modal" data-target="#openModal" id="tmdbupdate_btn"  onclick="web2py_component('{{=URL('movie','fetch_existing.load',vars=dict(tmdb_id=film.tmdb_id,movie_id=film.id)) }}','contenutomodal',1000,'Infinity');" id="tmdbupdate_btn"><span id="tmdbupdate_spinner" class="glyphicon glyphicon-refresh"></i></a>
+            {{ else: }}
+                <li><a class="btn btn-default btn-lg" role="button" data-toggle="modal" data-target="#openModal" id="tmdbupdate_btn" 
+                       onclick="aggiorna_film();"><span id="tmdbupdate_spinner" class="glyphicon glyphicon-refresh"></i></a>
+            {{ pass }}
+        </ul>
+    </div>
+<div class="row">
+  <div class="col-md-4">
+      <img src="{{ = URL('download',args=film.locandina) }}" class="media-object" alt="locandina">
+  </div>
+  <div class="col-md-4">
+  <h3>Trama</h3>
+    <h4>{{ = film.trama }}</h4>
+    {{ if film.nota: }}
+      <h3>Note</h3>
+        <h4>{{ = film.nota }}</h4>
+    {{ pass }}
+    <h3>{{=T('Giudizio')}}</h3>
+    <h4>{{ = film.giudizio_mio }}</h4>
+    <h3>{{ = T('Etichette') }}</h3>
+    <dl class="horizontal">
+    {{ for tag in film.tags(): }}
+        <dt>{{ = A(tag.nome,_class="btn btn-info",_href=URL('moviedb','default','tags',args=tag.slug)) }}</dt>
+    {{ pass }}
+    </dl>
+  </div>
+</div>
+</div>
+<div role="tabpanel" class="tab-pane" id="cast">
+    <h3>{{ = T('Cast per questo film')}}</h3>
+    <ul class="list-unstyled">
+    {{ for attore in film.cast(): }}    
+        <h4>{{ = A(attore.nome,_href=URL('default','persona',args=attore.slug)) }}</h4>
+    {{ pass }}
+    </ul>
+</div>
+<div role="tabpanel" class="tab-pane" id="media">	
+    <h3>
+    {{=T('Supporti associati a questo film')}}
+    </h3>&nbsp;{{ = A(SPAN(_class="glyphicon glyphicon-plus-sign"),_href=URL('associamedia',vars=dict(film= film.id)),_class="btn btn-primary") }}</h5>
+    {{ if film.formati(): }}    
+        {{ for formato in film.formati(): }}
+            {{=formato.formato.tipo }}&nbsp;{{=T('in formato')}}&nbsp;{{ =A('%s n.%s' %(formato.supporto.tipo.nome,formato.supporto.id_originale or formato.supporto.id),_href=URL('default','supporto',args=(formato.supporto.id))) }} il {{ = formato.supporto.datacreazione }}
+        {{ pass }}
+    {{ else: }}
+        {{=T('Nessun supporto associato. Perché non aggiungerne uno?')}}
+    {{ pass }}
+</div>
+</div>
+<script>
+    function aggiorna_film() {
+        web2py_component('{{=URL('movie','find_title.load',vars=dict(movie_id=film.id))}}','contenutomodal');
+}
+    //web2py_component('{{=URL('movie','fetch_new.load',vars=dict(tmdb_id=film.tmdb_id)) }}','contenutomodal',1000,'Infinity');" id="tmdbupdate_btn">
+</script>
+{{ pass }}

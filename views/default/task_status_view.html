@@ -1,0 +1,63 @@
+{{extend 'layout.html'}}
+<div id="successbox" class="hidden alert alert-success">
+    {{ = success_message }}
+    Clicca <a href="{{ = success_url }}">qui</a> per proseguire.
+</div>
+<div id="failbox" class="hidden alert alert-error">
+    {{ = failure_message }}
+    Clicca <a href="javascript:window.history.back();">qui</a> per tornare indietro;
+    </p>
+    
+</div>
+
+<h1>{{ = heading_text }}</h1>
+<div class="text-center" id="spinner">    
+    <img src="{{=URL('static','images',args=('ajax-loader.gif'))}}">
+</div>
+<div id="stato">
+<p id="statustext" class="text-center">Elaborazione in corso...</p>
+</div>
+<script>
+$(document).ready(function () {
+aggiorna_stato();
+});
+                 
+function aggiorna_stato() {
+var jqxhr = $.getJSON("{{=URL('moviedb','default','call/json',args=('task_status'),vars=dict(task=task_id))}}", function() {
+  console.log( "success" );
+})
+  .done(function(task) {
+    console.log( "funzione completata. In teoria dovremmo avere l'oggetto task" );
+    console.log(task.status);
+    if (task.status == "COMPLETED") {
+       jQuery('#successbox').show();
+       jQuery('#spinner').hide();
+       jQuery('#statustext').text('Aggiornamento dettagli completato con successo.');
+        slug = task.result.replace(/['"]+/g, '');
+        redirect_to_result('/moviedb/film/'+slug);
+  }
+    else if (task.status == "FAILED") {
+    jQuery('#failbox').show();
+    jQuery('#spinner').hide();
+    jQuery('#statustext').text('Aggiornamento dettagli fallito. Il task risulta:'+task.status);
+  }
+    else {
+        setTimeout(aggiorna_stato,5000);
+  }
+  })
+  .fail(function(task) {
+    console.log( "richiesta status task fallito" );
+    console.log(task.status);
+    jQuery('#failbox').show();
+    jQuery('#spinner').hide();
+    jQuery('#statustext').text('Errore durante la richiesta di stato del task.');
+  })
+  .always(function() {
+    console.log( "que lo scrivi a prescindere" );
+  });
+}
+    
+function redirect_to_result(url) {
+    window.location.replace(url);
+}
+</script>
