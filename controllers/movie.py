@@ -55,11 +55,18 @@ def trovatitolo(query,update=False):
     for r in search.results:
         if not update:
             #risultati.append({'url':URL('movie','fetch_new',vars=dict(tmdb_id=r['id']),extension='html'),'titolo':r['title'],'anno':r['release_date']})
+<<<<<<< HEAD
             risultati.append({'tmdb_id':"%s" % r['id'],'titolo':r['title'],'anno':r['release_date']})
             #    {'url':URL('movie','fetch_new',vars=dict(tmdb_id=r['id']),extension='html'),})
         else:
             risultati.append({'tmdb_id':"%s" % r['id'],'titolo':r['title'],'anno':r['release_date']})
             #risultati.append({'url':URL('movie','fetch_existing',vars=dict(tmdb_id=r['id'],movie_id=update),extension='load'),'titolo':r['title'],'anno':r['release_date']})
+=======
+            risultati.append({'url':URL('movie','fetch_new',vars=dict(tmdb_id=r['id']),extension='load'),'titolo':r['title'],'anno':r['release_date']})
+            #    {'url':URL('movie','fetch_new',vars=dict(tmdb_id=r['id']),extension='html'),})
+        else:
+            risultati.append({'url':URL('movie','fetch_existing',vars=dict(tmdb_id=r['id'],movie_id=update),extension='load'),'titolo':r['title'],'anno':r['release_date']})
+>>>>>>> f1c982775ddd08dff00d78d816f89312c871e779
             #risultati.append({'url':URL('movie','fetch_existing',vars=dict(tmdb_id=r['id'],movie_id=update),extension='html'),'titolo':r['title'],'anno':r['release_date']})
     return risultati
     #return search.results
