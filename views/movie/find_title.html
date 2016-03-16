@@ -1,30 +1,38 @@
 {{extend 'layout.html'}}
-<div id="formricerca">
-{{ = form }}
-{{ if risultati: }}
-<table>
-    <tr><th>Titolo</th><th>Anno</th></tr>
-    {{ for risultato in risultati: }}
-    <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s);" % risultato['tmdb_id'],_href='#') }}</td><td>{{ = risultato['anno'] }}</td></tr>
-    {{ pass }}
-</table>
-{{ pass }}
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Inserisci nuovo film</h4>
+      </div>
+      <div class="modal-body">
+      <div id="formricerca">
+      {{ = form }}
+      {{ if risultati: }}
+        <table>
+            <tr><th>Titolo</th><th>Anno</th></tr>
+            {{ for risultato in risultati: }}
+                <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s);" % risultato['tmdb_id'],_href='#') }}</td><td>{{ = risultato['anno'] }}</td></tr>
+            {{ pass }}
+        </table>
+      {{ pass }}
+      </div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
 </div>
+
+
+
+
+
 <div id="taskstatus">
-{{ try: }}
 <h4>Elaborazione task in corso...</h4>
 <p id="statustext" class="text-center"></p>
-<span class="titolitrovati">
-<!-- <div class="center-block"><img src="{{=URL('static','images',args=('ajax-loader.gif'))}}"></div> -->
-    <div class="progress">
-        <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="Attendere..." aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-        <span class="sr-only">Please wait...</span>
-        </div>
-    </div>
-</span>
-{{ except: }}
-{{ pass }}
-</div>
+<div class="center-block"><img src="{{=URL('static','images',args=('ajax-loader.gif'))}}"></div> 
 <script>
 function aggiorna_film(idfilm) {
    $.ajax({

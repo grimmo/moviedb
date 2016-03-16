@@ -11,11 +11,6 @@ def call():
     """
     return service()
 
-def is_task_already_queued(key):
-    "Check if task for the same movie has already been queued"
-    #return db((db.scheduler_task.vars == dizio) & (db.scheduler_task.status == 'QUEUED')).count() > 0
-    return db(db.scheduler_task.vars == key).count() > 0
-
 def fetch_existing():
     # check if task to fetch details for this movie has already been queued
     dizio =   '{"movie_id": "%s", "tmdb_id": "%s"}' % (request.vars.movie_id,request.vars.tmdb_id)
@@ -30,8 +25,8 @@ def fetch_existing():
 @service.json
 def fetch_new():
     dizio =   '{"tmdb_id": "%s"}' % request.vars.tmdb_id
-    if is_task_already_queued(dizio):
-        task_info = db(db.scheduler_task.vars == dizio).select().last()
+    if db( (db.scheduler_task.vars == dizio) &  ((db.scheduler_task.status == 'QUEUED') | (db.scheduler_task == 'RUNNING'))  ).count() > 0:
+        task_info = db( (db.scheduler_task.vars == dizio) &  ((db.scheduler_task.status == 'QUEUED') | (db.scheduler_task == 'RUNNING'))  ).select().last()
     else: 
         task_info = scheduler.queue_task(fetch_new_movie,pvars=dict(tmdb_id=request.vars.tmdb_id))
     task_details = db.scheduler_task[task_info.id]
@@ -39,7 +34,7 @@ def fetch_new():
     #    redirect(URL('default','task_status_view',vars={'task':task.id,'heading':'Inserimento dettagli film','success':'dettagli del film inseriti','failure':'Errore durante l\'inserimento dei dettagli del film','success_url':''}))
 
 def find_title():
-   form=FORM('Titolo:', INPUT(_name='titolo'), INPUT(_type='submit',_value='Cerca'))
+   form=FORM('Titolo ', INPUT(_name='titolo'), INPUT(_type='submit',_value='Cerca'))
    if request.vars.movie_id:
        risultati = trovatitolo(db.film[request.vars.movie_id].titolo,update=request.vars.movie_id)
        return dict(form=form,risultati=risultati)

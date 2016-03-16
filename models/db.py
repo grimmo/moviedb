@@ -14,7 +14,7 @@ if not request.env.web2py_runtime_gae:
     #db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'])
     #'w2p_dba'@'localhost' IDENTIFIED BY 'moviedbrul3z!'
     #db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=True,fake_migrate=True,check_reserved=['mysql'],pool_size=5)
-    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=False,check_reserved=['mysql'],pool_size=5)
+    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=True,check_reserved=['mysql'],pool_size=5)
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
     db = DAL('google:datastore')
