@@ -1,0 +1,50 @@
+{{'''
+# License: Public Domain
+# Author: Iceberg at 21cn dot com
+
+With this generic.load file, you can use same function to serve two purposes.
+
+= regular action
+- ajax callback (when called with .load)
+
+Example modified from http://www.web2py.com/AlterEgo/default/show/252:
+
+def index():
+    return dict(
+		part1='hello world',
+        	part2=LOAD(url=URL(r=request,f='auxiliary.load'),ajax=True))
+
+def auxiliary():
+    form=SQLFORM.factory(Field('name'))
+    if form.accepts(request.vars):
+        response.flash = 'ok' 
+        return dict(message="Hello %s" % form.vars.name)
+    return dict(form=form)
+
+Notice:
+
+- no need to set response.headers['web2py-response-flash']
+- no need to return a string
+even if the function is called via ajax.
+
+'''}}
+<h4 class="modal-title text-center">{{=T('Elaborazione task in corso...')}}</h4>
+<span class="titolitrovati"></span>
+<div id="stato">
+{{ if task_id: }}
+    <div class="progress">
+<div id = "thepb" class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+</div>
+        <p id="statustext" class="text-center">{{ = db.scheduler_task[task_id].status }}</p>
+{{ else: }}
+    <p>
+        Impossibile ottenere task id</p>
+    </p>
+{{ pass }}
+</div>
+<script>
+function aggiorna_stato() {
+ajax('{{=URL('moviedb','tasks','call',args=('json','status'),vars=dict(task=task_id),extension=False)}}', ['status'], 'statustext');
+}
+window.onload = aggiorna_stato();
+</script>

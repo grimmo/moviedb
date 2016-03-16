@@ -28,16 +28,17 @@ Notice:
 even if the function is called via ajax.
 
 '''}}
-<div>
-<a href="#close" title="Close" class="close">X</a>
+<h4 class="modal-title">
+{{ =T('Seleziona il titolo che corrisponde a questo film') }}
+</h4>
 {{ if risultati: }}
-<h1>Ho trovato questi film:</h1>
 <span class="titolitrovati">
+    <ul class="list-unstyled">
     {{ for risultato in risultati: }}
-        <li><a href="{{ = risultato['url'] }}">{{ = risultato['titolo'] }}</a> ({{ = risultato['anno'] }})</li>
+        <li>{{ = A("%s (%s)" % (risultato['titolo'],risultato['anno']),_href="fetch_new.load?tmdb_id=%s" % risultato['tmdb_id'])}}</li>
     {{ pass }}
+    </ul>
 </span>
-</div>
 {{ else: }}
 <h1>Inserisci titolo da cercare</h1>
 <span class="titolitrovati">
