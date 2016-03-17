@@ -204,6 +204,7 @@
 'Recipes': 'Recipes',
 'Record': 'Record',
 'Record Created': 'Record Created',
+'Record Deleted': 'Record Deleted',
 'record does not exist': 'il record non esiste',
 'Record ID': 'Record ID',
 'Record id': 'Record id',

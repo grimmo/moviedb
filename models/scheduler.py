@@ -4,15 +4,20 @@ from urllib import urlencode,urlretrieve
 import tmdbsimple as tmdb
 import os,cPickle
 import traceback
+from gluon.contrib.appconfig import AppConfig
 
-try:
-    apikey_filepath = os.path.join(request.folder, "private", "themoviedb.key")
-    with open(apikey_filepath, 'rb') as tmdb_api_keyfile:
-        TMDB_API_KEY = cPickle.load(tmdb_api_keyfile)
-except:
-    logger.warning('Unable to load API key from %s' % apikey_filepath)
+## once in production, remove reload=True to gain full speed
+myconf = AppConfig(reload=False)
+tmdb.API_KEY = myconf.take('tmdb.key')
 
-tmdb.API_KEY = TMDB_API_KEY
+#try:
+#    apikey_filepath = os.path.join(request.folder, "private", "themoviedb.key")
+#    with open(apikey_filepath, 'rb') as tmdb_api_keyfile:
+#        TMDB_API_KEY = cPickle.load(tmdb_api_keyfile)
+#except:
+#    logger.warning('Unable to load API key from %s' % apikey_filepath)
+
+#tmdb.API_KEY = TMDB_API_KEY
 
 def slugify(text):
     return IS_SLUG(check=False)(text.encode('utf-8'))[0]

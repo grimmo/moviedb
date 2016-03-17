@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 # prova qualcosa come
+from gluon.tools import Crud
+crud = Crud(db)
+
 def index(): return dict(message="hello from supporto.py")
 
 def addtipo():

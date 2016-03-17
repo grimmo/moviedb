@@ -10,6 +10,8 @@
 #########################################################################
 import cPickle,os
 import json
+from gluon.tools import Crud
+crud = Crud(db)
 
 def index():
     session.forget()
