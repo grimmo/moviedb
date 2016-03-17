@@ -24,7 +24,8 @@ response.google_analytics_id = None
 #########################################################################
 
 response.menu = [
-    (T('Home'), False, URL('default', 'index'), [])
+    (T('Home'), False, URL('default', 'index'), []),
+    (T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-film'),_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[])
 ]
 
 DEVELOPMENT_MENU = False

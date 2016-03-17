@@ -63,3 +63,6 @@ def trovatitolo(query,update=False):
             #risultati.append({'url':URL('movie','fetch_existing',vars=dict(tmdb_id=r['id'],movie_id=update),extension='html'),'titolo':r['title'],'anno':r['release_date']})
     return risultati
     #return search.results
+
+def prova():
+    return dict()

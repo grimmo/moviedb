@@ -171,6 +171,7 @@
 'Nome': 'Nome',
 'Non può essere vuoto': 'Non può essere vuoto',
 'not authorized': 'non autorizzato',
+'Nuovo': 'Nuovo',
 'Object or table name': 'Oggeto o nome tabella',
 'Old password': 'Vecchia password',
 'Online examples': 'Vedere gli esempi',
