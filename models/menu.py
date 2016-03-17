@@ -25,7 +25,13 @@ response.google_analytics_id = None
 
 response.menu = [
     (T('Home'), False, URL('default', 'index'), []),
-    (T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-film'),_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[])
+    #(T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-plus'),_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[])
+    (T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-plus'),_href="#"),[
+        (T('Film'),False, A(SPAN(_class='glyphicon glyphicon-film'),' film',_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[]),
+        (T('Collocazione'),False, A(SPAN(_class='glyphicon glyphicon-briefcase'),' collocazione',_href="#"),[]),
+        (T('Supporto'),False, A(SPAN(_class='glyphicon glyphicon-cd'),' media',_href=URL('default','nuovosupporto')),[])
+        ]
+        )
 ]
 
 DEVELOPMENT_MENU = False

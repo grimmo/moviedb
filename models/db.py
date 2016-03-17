@@ -142,7 +142,7 @@ db.define_table('ruoli',
      )
        
 db.define_table('formato',
-     Field('tipo'),
+     Field('tipo',label='Formato'),
      Field('film','reference film'),
      Field('supporto','reference supporto'),
      Field('multiaudio','boolean',default=False),
