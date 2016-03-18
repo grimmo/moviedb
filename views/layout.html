@@ -64,11 +64,20 @@
           <ul class="nav navbar-nav navbar-right">
             {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
           </ul>
+               <form class="navbar-form navbar-right" role="search" onsubmit="return;false">
+<div class="form-group">
+<a class="dropdown-toggle" id="toggleresult" role="button" data-toggle="dropdown" data-target="#"> 
+<input type="text" class="form-control" placeholder="Cerca film, attori o registi" id="moviesearch" name="moviesearch" data-toggle="dropdown" autocomplete="off" onfocus="$('#dropdown_risultati').toggle();"></div></a>
+<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span></button>
+<ul class="dropdown-menu" role="menu" aria-labelledby="moviesearch" id="dropdown_risultati">
+</ul>
+</form>
           {{if response.menu:}}
           {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
           {{pass}}
         </div>
       </div>
+        
     </nav>
     <!-- Masthead ===================================== -->    
     {{block header}}
@@ -140,5 +149,9 @@
       });
     </script>
     {{pass}}
+<script>
+jQuery("#moviesearch").keyup(function(){
+      ajax("{{=URL('default','search_selector')}}", ['moviesearch'], 'dropdown_risultati')});
+</script>
   </body>
 </html>

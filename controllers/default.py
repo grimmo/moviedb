@@ -171,21 +171,21 @@ def persona():
 
 def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
-"""
+
+
 def movieselect():
     "ajax dropdown search demo"
     return dict()
 
-def movie_selector():
+def search_selector():
     "navbar search function"
-    if not request.vars.moviesearch: return ''
+    if not request.vars.moviesearch or len(request.vars.moviesearch) < 2: return ''
     pattern = request.vars.moviesearch.capitalize()
     titoli_film = [(row.slug,row.titolo) for row in db(db.film.titolo.contains(pattern)).select(limitby=(0,10))]
     nomi_cast = [(row.nome,row.slug) for row in db(db.moviecast.nome.contains(pattern)).select(limitby=(0,10))]
     return DIV([LI(A(tit,_href=URL('default','film',args=sl),_tabindex="-1")) for sl,tit in titoli_film]+
     [LI(_class="divider")]+[LI(A(nome,_href=URL('default','persona',args=sl),_tabindex="-1")) for nome,sl in nomi_cast]
     )
-"""
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)
