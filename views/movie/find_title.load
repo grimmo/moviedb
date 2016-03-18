@@ -28,19 +28,57 @@ Notice:
 even if the function is called via ajax.
 
 '''}}
-<div>
-<a href="#close" title="Close" class="close">X</a>
-{{ if risultati: }}
-<h1>Ho trovato questi film:</h1>
-<span class="titolitrovati">
-    {{ for risultato in risultati: }}
-        <li><a href="{{ = risultato['url'] }}">{{ = risultato['titolo'] }}</a> ({{ = risultato['anno'] }})</li>
-    {{ pass }}
-</span>
-</div>
-{{ else: }}
-<h1>Inserisci titolo da cercare</h1>
-<span class="titolitrovati">
+<div id="formricerca">
 {{ = form }}
-</span>
-{{ pass }}
+</div>
+<div id="risultati">
+{{ if risultati: }}
+       <table class="table table-striped table-hover table-bordered table-condensed">
+            <tr><th>Titolo</th><th>Anno</th></tr>
+            {{ for risultato in risultati: }}
+                <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s);" % risultato['tmdb_id'],_href='#') }}</td>&nbsp;<td>{{ = risultato['anno'] }}</td></tr>
+            {{ pass }}
+        </table>
+      {{ pass }}
+</div>
+<div id="taskstatus" class="hidden">
+<h3 id="titolomodal">Inserimento del task nella coda batch..</h3>
+<img id="spinner" src="{{=URL('static','images',args=('ajax-loader.gif'))}}">
+<h4 id="statustext" class="text-warning"></h4>
+
+<script>
+function aggiorna_film(idfilm) {
+  $('#formricerca').fadeOut();
+  $('#taskstatus').show();
+  $('#risultati').fadeOut();
+  $('#taskstatus').removeClass('hidden');
+  $.ajax({
+      type:'POST',
+      url: '{{ = URL("moviedb","movie","call",args=("json","fetch_new")) }}',
+      data: {'tmdb_id': idfilm},
+      dataType: 'json', //json data type
+      success: function (jsonData) {
+        $('#titolomodal').text('Elaborazione task n.'+jsonData.task_details.id+' in corso...');
+        var tasktimer = setInterval(function() {
+        var stato = $.getJSON("{{ = URL('moviedb','tasks','call/json',args=('status'))}}?task="+jsonData.task_details.id, function( data ) {
+                if (data.result == null) {
+                    $('#statustext').text(data.status);
+                }
+                else {
+                    $('#spinner').hide();
+                    $('#statustext').html("<a href=/moviedb/default/film/" + data.result.replace(/"/g,'') + ">" + data.result.replace(/"/g,'')+ "</a></h4>");
+                    clearInterval(tasktimer);
+                }
+           });
+        }, 2000);
+},
+      error: function () {
+      $('#spinner').hide();
+      $('#statustext').html('<h4 class="warning">Errore durante l\'inserimento del film</h4>');
+      }
+});
+}
+function redirect_to_result(url) {
+    window.location.replace(url);
+}
+</script>

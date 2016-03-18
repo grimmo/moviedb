@@ -1,2 +1,50 @@
 {{extend 'layout.html'}}
-{{=LOAD('movie','find_title.load',ajax=True)}}
+<div id="formricerca">
+{{ = form }}
+</div>
+<div id="risultati">
+{{ if risultati: }}
+       <table class="table table-striped table-hover table-bordered table-condensed">
+            <tr><th>Titolo</th><th>Anno</th></tr>
+            {{ for risultato in risultati: }}
+                <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s);" % risultato['tmdb_id'],_href='#') }}</td>&nbsp;<td>{{ = risultato['anno'] }}</td></tr>
+            {{ pass }}
+        </table>
+      {{ pass }}
+</div>
+<div id="taskstatus" class="hidden">
+<h3>Elaborazione task in corso...</h3>
+<img id="spinner" src="{{=URL('static','images',args=('ajax-loader.gif'))}}">
+<h4 id="statustext" class="text-warning"></h4>
+
+<script>
+function aggiorna_film(idfilm) {
+  $('#formricerca').fadeOut();
+  $('#taskstatus').show();
+  $('#risultati').fadeOut();
+  $('#taskstatus').removeClass('hidden');
+  $.ajax({
+      type:'POST',
+      url: 'call/json/fetch_new/',
+      data: {'tmdb_id': idfilm},
+      dataType: 'json', //json data type
+      success: function (jsonData) {
+        var tasktimer = setInterval(function() {
+           var stato = $.getJSON("{{ = URL('moviedb','tasks','call/json',args=('status'))}}?task="+jsonData.task_details.id, function( data ) {
+                if (data.result == null) {
+                    $('#statustext').text(data.status);
+                }
+                else {
+                    $('#spinner').hide();
+                    $('#statustext').html("<a href=/moviedb/default/film/" + data.result.replace(/"/g,'') + ">" + data.result.replace(/"/g,'')+ "</a></h4>");
+                    clearInterval(tasktimer);
+                }
+           });
+        }, 2000);
+}
+});
+}
+function redirect_to_result(url) {
+    window.location.replace(url);
+}
+</script>

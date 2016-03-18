@@ -5,11 +5,10 @@
 ## Customize your APP title, subtitle and menus here
 #########################################################################
 
-response.logo = A(B('web',SPAN(2),'py'),XML('&trade;&nbsp;'),
-                  _class="brand",_href="http://www.web2py.com/")
+response.logo = A(B('MovieDB'),_class="brand",_href="/moviedb")
 response.title = ' '.join(
     word.capitalize() for word in request.application.split('_'))
-response.subtitle = T('customize me!')
+response.subtitle = T('Arrrrrrr!')
 
 ## read more at http://dev.w3.org/html5/markup/meta.name.html
 response.meta.author = 'Your Name <you@example.com>'
@@ -25,10 +24,17 @@ response.google_analytics_id = None
 #########################################################################
 
 response.menu = [
-    (T('Home'), False, URL('default', 'index'), [])
+    (T('Home'), False, URL('default', 'index'), []),
+    #(T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-plus'),_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[])
+    (T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-plus'),_href="#"),[
+        (T('Film'),False, A(SPAN(_class='glyphicon glyphicon-film'),' film',_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[]),
+        (T('Collocazione'),False, A(SPAN(_class='glyphicon glyphicon-briefcase'),' collocazione',_href="#"),[]),
+        (T('Supporto'),False, A(SPAN(_class='glyphicon glyphicon-cd'),' media',_href=URL('default','nuovosupporto')),[])
+        ]
+        )
 ]
 
-DEVELOPMENT_MENU = True
+DEVELOPMENT_MENU = False
 
 #########################################################################
 ## provide shortcuts for development. remove in production

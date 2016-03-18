@@ -10,8 +10,11 @@ sessions/*
 errors/*
 private/*
 uploads/*
+static/images/locandine/*
 progress.log
 routes.example.py
 __init__.py
 ABOUT
 LICENSE
+static/images/locandine
+.pythonhistory

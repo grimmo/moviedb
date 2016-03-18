@@ -8,13 +8,10 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 ## - call exposes all registered services (none by default)
 #########################################################################
-#import xmlrpclib
 import cPickle,os
-#from tmdbsimple import TMDB
 import json
-
-#tmdb_service = xmlrpclib.ServerProxy(URL('tmdb','call',args=['xmlrpc'],scheme=True,host=True),allow_none=True)
-#tmdb_service = xmlrpclib.ServerProxy('http://127.0.0.1:8000/moviedb/tmdb/call/xmlrpc/',allow_none=True)
+from gluon.tools import Crud
+crud = Crud(db)
 
 def index():
     session.forget()
@@ -26,10 +23,6 @@ def index():
     #return dict(rows=rows,page=page,items_per_page=items_per_page)
     film = db(db.film.id>0).select(limitby=limitby,orderby=[db.film.titolo,db.film.anno])
     return dict(film=film,page=page,items_per_page=items_per_page)
-
-def index_new():
-    grid = SQLFORM.grid(db.film,fields=[db.film.titolo,db.film.registi],editable=False,deletable=False)
-    return locals()
 
 # Ok, the next three functions are ugly and it can be done much better than this, but for now it just works.
 def movies_by_flag(limitby,flag=False):
@@ -50,7 +43,6 @@ def unseen():
     items_per_page=20
     limitby=(page*items_per_page,(page+1)*items_per_page+1)
     return dict(film=movies_by_flag(limitby),page=page,items_per_page=items_per_page)
-
 
 def user():
     """
@@ -85,17 +77,6 @@ def call():
     supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
     """
     return service()
-
-def cerca():
-    #form=SQLFORM(db.film,db.moviecast,fields=['slug'])
-    #if form.vars.moviesearch != "" and form.validate(session=None, formname='cercaform'):
-    if request.vars.moviesearch and request.vars.moviesearch != "":
-        chiave = request.vars.moviesearch
-        risultati_film = db(db.film.slug.contains(chiave)).select()
-        risultati_attori = db(db.moviecast.slug.contains(chiave)).select()
-        return dict(risultati_film=risultati_film,risultati_attori=risultati_attori)
-    else:
-        return dict(risultati_film=None,risultati_attori=None)
 
 @auth.requires_signature()
 def data():
@@ -177,21 +158,20 @@ def persona():
 
 def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
-
+"""
 def movieselect():
     "ajax dropdown search demo"
     return dict()
-
-def movie_selector():
+"""
+def search_selector():
     "navbar search function"
-    if not request.vars.moviesearch: return ''
+    if not request.vars.moviesearch or len(request.vars.moviesearch) < 2: return ''
     pattern = request.vars.moviesearch.capitalize()
     titoli_film = [(row.slug,row.titolo) for row in db(db.film.titolo.contains(pattern)).select(limitby=(0,10))]
     nomi_cast = [(row.nome,row.slug) for row in db(db.moviecast.nome.contains(pattern)).select(limitby=(0,10))]
     return DIV([LI(A(tit,_href=URL('default','film',args=sl),_tabindex="-1")) for sl,tit in titoli_film]+
     [LI(_class="divider")]+[LI(A(nome,_href=URL('default','persona',args=sl),_tabindex="-1")) for nome,sl in nomi_cast]
     )
-
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)
@@ -242,76 +222,3 @@ def update_formati():
     for row in film_e_formati.select(db.legacy_formato.tipo,db.film.id,db.supporto.id,db.legacy_formato.multiaudio,db.legacy_formato.surround):  righe.append(db.formato.insert(tipo=row.legacy_formato.tipo,film=row.film.id,supporto=row.supporto.id,multiaudio=row.legacy_formato.multiaudio,surround=row.legacy_formato.surround))
     return dict(righe=righe)
 '''
-
-def add_tmdb_api_key():
-    form=FORM('Enter your API key:', INPUT(_name='akey'), INPUT(_type='submit'))
-    if form.accepts(request,session) and form.vars.akey != "":
-        filepath = os.path.join(request.folder, "private", "themoviedb.key")
-        with open(filepath, 'wb') as tmdb_api_keyfile:
-            cPickle.dump(form.vars.akey, tmdb_api_keyfile)
-        session.flash = "API key added successfully"
-        redirect(URL('index'))
-    elif form.errors:
-        session.flash = "Error! Please input a valid key"
-    else:
-        session.flash = "Please input your api key"
-    return dict(form=form)
-
-@service.json
-def task_status():
-    """Questa vista ritorna in formato JSON le informazioni sullo stato di un task schedulato"""
-    id_task = request.vars.task
-    task = db.scheduler_task[id_task]
-    if task and task.status == "COMPLETED":
-        result = db(db.scheduler_run.task_id == task.id and db.scheduler_run.status == 'COMPLETED').select().last().run_result
-        result.replace('"',"'")
-    else:
-        result = None
-    return dict(id=task.id,status=task.status,nextrun=task.next_run_time,result=result)
-
-def task_status_view():
-    return dict(heading_text=request.vars.heading,success_message=request.vars.success,failure_message=request.vars.failure,success_url=request.vars.success_url,task_id=request.vars.task)
-
-#obsolete
-"""
-def get_movie_poster():
-    tmdb_id = request.vars.tmdb_id
-    if tmdb_id:
-        response = tmdb_service.fetch_movie_poster(tmdb_id)
-        if response.has_key('errors') and response['errors']:
-            return dict(result=response['errors'])
-        else: redirect(URL('moviedb','default','film.html',args=db(db.film.tmdb_id==tmdb_id).select().last().slug))
-    else:
-        raise HTTP(404,'Did not specify themoviedb id')
-
-def fetch_new_movie():
-    tmdb_id = request.vars.tmdb_id
-    if tmdb_id == "":
-       raise HTTP(404,'Missing movie id')
-    else:
-       status = tmdb_service.full_insert_movie(tmdb_id)
-       if type(status) == dict and status['slug']:
-           redirect(URL('moviedb','default','film',args=status['slug']))
-       else:
-           return status
-
-def update_movie():
-    existing_id = request.get_vars.existing_id
-    moviedb_id = request.get_vars.tmdb_id
-    update_query = tmdb_service.big_update_movie(moviedb_id,existing_id)
-    if not update_query['errors']:
-        if not session.brandnew:
-            session.brandnew = existing_id
-        return "jQuery(window).attr('location','%s');" % URL('moviedb','default','film',args=update_query['result'])
-    else:
-        session.errors = existing_id
-        #FIXME: Not good, we shall display errors via ajax
-        return "jQuery(window).attr('location','%s');jQuery('.error_message').html('%s');" % (URL('moviedb','default','film',args=update_query['result']),update_query['errors'])
-@service.json
-def inserisci_film_differito(tmdb_id):
-    return scheduler.queue_task('insert_movie',vars=json.dumps({'tmdb_id':tmdb_id}))
-
-@service.json
-def aggiorna_film_differito(movie_id,tmdb_id):
-    return scheduler.queue_task('update_existing_movie',vars=json.dumps({'movie_id':movie_id,'tmdb_id':tmdb_id}))
-"""

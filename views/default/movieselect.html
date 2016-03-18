@@ -1,16 +1,15 @@
 {{extend 'layout.html'}}
-<div class="page-header dropdown">
-<form class="search-query" onsubmit="return;false">
+<form class="navbar-form navbar-left" role="search" onsubmit="return;false">
+<div class="form-group">
 <a class="dropdown-toggle" id="toggleresult" role="button" data-toggle="dropdown" data-target="#"> 
-<div class="input-prepend">
-<span class="add-on"><i class="icon-search icon-black"></i></span>
-<input type="text" id="moviesearch" name="moviesearch" style="width: 250px" class="span2" data-toggle="dropdown" placeholder="" autocomplete="off" onclick="$('#dropdown_risultati').toggle();"></div></a>
+<input type="text" class="form-control" placeholder="Cerca film, attori o registi" id="moviesearch" name="moviesearch" data-toggle="dropdown" autocomplete="off" onclick="$('#dropdown_risultati').toggle();"></div></a>
+<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span></button>
 <ul class="dropdown-menu" role="menu" aria-labelledby="moviesearch" id="dropdown_risultati">
-<div id="risultati_ricerca"></div>    
+<div id="risultati_ricerca"></div>
 </ul>
 </form>
 </div>
 <script>
 jQuery("#moviesearch").keyup(function(){
-      ajax('movie_selector', ['moviesearch'], 'risultati_ricerca')});
+      ajax('search_selector', ['moviesearch'], 'risultati_ricerca')});
 </script>

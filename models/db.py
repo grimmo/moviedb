@@ -11,15 +11,21 @@ import tmdbsimple as tmdb
 ## be redirected to HTTPS, uncomment the line below:
 # request.requires_https()
 
+## app configuration made easy. Look inside private/appconfig.ini
+from gluon.contrib.appconfig import AppConfig
+import datetime
+# Tabelle "ereditate" da dbfilm su django
+now = datetime.datetime.now()
+
+## once in production, remove reload=True to gain full speed
+myconf = AppConfig(reload=True)
+
 if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
-    #db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'])
-    #'w2p_dba'@'localhost' IDENTIFIED BY 'moviedbrul3z!'
-    db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',check_reserved=['mysql'],pool_size=5)
-    #db = DAL('mysql://w2p_dba:moviedbrul3z!@localhost/web2py_moviedb',migrate=False,check_reserved=['mysql'],pool_size=5)
+    db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['mysql'])
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
-    db = DAL('google:datastore')
+    db = DAL('google:datastore+ndb')
     ## store sessions and tickets there
     session.connect(request, response, db=db)
     ## or store session in Memcache, Redis, etc.
@@ -30,10 +36,16 @@ else:
 ## by default give a view/generic.extension to all actions from localhost
 ## none otherwise. a pattern can be 'controller/function.extension'
 response.generic_patterns = ['*'] if request.is_local else []
+## choose a style for forms
+response.formstyle = myconf.take('forms.formstyle')  # or 'bootstrap3_stacked' or 'bootstrap2' or other
+response.form_label_separator = myconf.take('forms.separator')
+
+
 ## (optional) optimize handling of static files
 # response.optimize_css = 'concat,minify,inline'
 # response.optimize_js = 'concat,minify,inline'
-
+## (optional) static assets folder versioning
+# response.static_version = '0.0.0'
 #########################################################################
 ## Here is sample code if you need for
 ## - email capabilities
@@ -44,28 +56,25 @@ response.generic_patterns = ['*'] if request.is_local else []
 ## (more options discussed in gluon/tools.py)
 #########################################################################
 
-from gluon.tools import Auth, Crud, Service, PluginManager, prettydate
+from gluon.tools import Auth, Service, PluginManager
+
 auth = Auth(db)
-crud, service, plugins = Crud(db), Service(), PluginManager()
+service = Service()
+plugins = PluginManager()
 
 ## create all tables needed by auth if not custom tables
 auth.define_tables(username=False, signature=False)
 
 ## configure email
 mail = auth.settings.mailer
-mail.settings.server = 'logging' or 'smtp.gmail.com:587'
-mail.settings.sender = 'you@gmail.com'
-mail.settings.login = 'username:password'
+mail.settings.server = 'logging' if request.is_local else myconf.take('smtp.server')
+mail.settings.sender = myconf.take('smtp.sender')
+mail.settings.login = myconf.take('smtp.login')
 
 ## configure auth policy
 auth.settings.registration_requires_verification = False
 auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
-
-## if you need to use OpenID, Facebook, MySpace, Twitter, Linkedin, etc.
-## register with janrain.com, write your domain:api_key in private/janrain.key
-from gluon.contrib.login_methods.rpx_account import use_janrain
-use_janrain(auth, filename='private/janrain.key')
 
 #########################################################################
 ## Define your tables below (or better in another model file) for example
@@ -86,6 +95,7 @@ use_janrain(auth, filename='private/janrain.key')
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)
+<<<<<<< HEAD
 
 
 
@@ -93,6 +103,8 @@ now = datetime.datetime.now()
 
 # Tabelle "ereditate" da dbfilm su django
 
+=======
+>>>>>>> fd934ac013f7055bae2c01726a8b57160c1ce271
 db.define_table('tiposupporto',
       Field('nome','string',length=50),
       Field('permanente','boolean',default=False),
@@ -144,7 +156,7 @@ db.define_table('ruoli',
      )
        
 db.define_table('formato',
-     Field('tipo'),
+     Field('tipo',label='Formato'),
      Field('film','reference film'),
      Field('supporto','reference supporto'),
      Field('multiaudio','boolean',default=False),
@@ -226,5 +238,5 @@ db.film.tags = Field.Method(lambda row: db(db.tags.film.contains(row.film.id)).s
 db.moviecast.recitati = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == False) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
 db.moviecast.diretti = Field.Method(lambda row: [actors for actors in db((db.ruoli.persona == row.moviecast.id) & (db.ruoli.regista == True) & (db.film.id == db.ruoli.film)).select(db.film.titolo,db.film.slug)])
 db.supporto.contenuti = Field.Method(lambda row:[formato for formato in db((db.formato.supporto == row.supporto.id) & (db.formato.film == db.film.id)).select()])
-db.supporto.tvshow_contenuti = Field.Method(lambda row:[serie for serie in db(db.tvshow_media.support == row.supporto.id)])
+#db.supporto.tvshow_contenuti = Field.Method(lambda row:[serie for serie in db(db.tvshow_media.support == row.supporto.id)])
 db.formato.film.widget = SQLFORM.widgets.autocomplete(request, db.film.titolo, limitby=(0,10), min_length=2,id_field=db.film.id)
