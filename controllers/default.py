@@ -78,19 +78,6 @@ def call():
     """
     return service()
 
-def pippo():
-    return dict()
-
-def cerca():
-    db.film.titolo.widget = SQLFORM.widgets.autocomplete(request, db.film.titolo, limitby=(0,10), min_length=2,id_field=db.film.slug)
-    form=SQLFORM(db.film,fields=['titolo'])
-    if form.validate():
-      redirect(URL('film',args=form.vars.titolo))
-    else:
-      submit = form.element('input',_type='submit')
-      submit['_style'] = 'display:none;'
-      return dict(form=form)
-
 @auth.requires_signature()
 def data():
     """
@@ -171,12 +158,11 @@ def persona():
 
 def nuovosupporto():
     return dict(form=crud.create(db.supporto,next='supporto/[id]',fields=['tipo','collocazione']))
-
-
+"""
 def movieselect():
     "ajax dropdown search demo"
     return dict()
-
+"""
 def search_selector():
     "navbar search function"
     if not request.vars.moviesearch or len(request.vars.moviesearch) < 2: return ''
@@ -236,17 +222,3 @@ def update_formati():
     for row in film_e_formati.select(db.legacy_formato.tipo,db.film.id,db.supporto.id,db.legacy_formato.multiaudio,db.legacy_formato.surround):  righe.append(db.formato.insert(tipo=row.legacy_formato.tipo,film=row.film.id,supporto=row.supporto.id,multiaudio=row.legacy_formato.multiaudio,surround=row.legacy_formato.surround))
     return dict(righe=righe)
 '''
-
-def add_tmdb_api_key():
-    form=FORM('Enter your API key:', INPUT(_name='akey'), INPUT(_type='submit'))
-    if form.accepts(request,session) and form.vars.akey != "":
-        filepath = os.path.join(request.folder, "private", "themoviedb.key")
-        with open(filepath, 'wb') as tmdb_api_keyfile:
-            cPickle.dump(form.vars.akey, tmdb_api_keyfile)
-        session.flash = "API key added successfully"
-        redirect(URL('index'))
-    elif form.errors:
-        session.flash = "Error! Please input a valid key"
-    else:
-        session.flash = "Please input your api key"
-    return dict(form=form)

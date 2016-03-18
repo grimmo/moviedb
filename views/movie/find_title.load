@@ -42,7 +42,7 @@ even if the function is called via ajax.
       {{ pass }}
 </div>
 <div id="taskstatus" class="hidden">
-<h3>Elaborazione task in corso...</h3>
+<h3 id="titolomodal">Inserimento del task nella coda batch..</h3>
 <img id="spinner" src="{{=URL('static','images',args=('ajax-loader.gif'))}}">
 <h4 id="statustext" class="text-warning"></h4>
 
@@ -54,12 +54,13 @@ function aggiorna_film(idfilm) {
   $('#taskstatus').removeClass('hidden');
   $.ajax({
       type:'POST',
-      url: 'call/json/fetch_new/',
+      url: '{{ = URL("moviedb","movie","call",args=("json","fetch_new")) }}',
       data: {'tmdb_id': idfilm},
       dataType: 'json', //json data type
       success: function (jsonData) {
+        $('#titolomodal').text('Elaborazione task n.'+jsonData.task_details.id+' in corso...');
         var tasktimer = setInterval(function() {
-           var stato = $.getJSON("{{ = URL('moviedb','tasks','call/json',args=('status'))}}?task="+jsonData.task_details.id, function( data ) {
+        var stato = $.getJSON("{{ = URL('moviedb','tasks','call/json',args=('status'))}}?task="+jsonData.task_details.id, function( data ) {
                 if (data.result == null) {
                     $('#statustext').text(data.status);
                 }
@@ -70,7 +71,11 @@ function aggiorna_film(idfilm) {
                 }
            });
         }, 2000);
-}
+},
+      error: function () {
+      $('#spinner').hide();
+      $('#statustext').html('<h4 class="warning">Errore durante l\'inserimento del film</h4>');
+      }
 });
 }
 function redirect_to_result(url) {
