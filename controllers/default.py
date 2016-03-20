@@ -129,7 +129,7 @@ def movieandcastedit():
     return dict(form=form)
 
 def supporto():
-    media = db.supporto(id=request.args(0))
+    media = db.supporto(id_originale=request.args(0))
     if not media:
         raise HTTP(404)
     if media.id_originale:

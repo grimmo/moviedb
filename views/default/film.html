@@ -75,7 +75,7 @@
     </h3>&nbsp;{{ = A(SPAN(_class="glyphicon glyphicon-plus-sign"),_href=URL('associamedia',vars=dict(film= film.id)),_class="btn btn-primary") }}</h5>
     {{ if film.formati(): }}    
         {{ for formato in film.formati(): }}
-            {{=formato.formato.tipo }}&nbsp;{{=T('in formato')}}&nbsp;{{ =A('%s n.%s' %(formato.supporto.tipo.nome,formato.supporto.id_originale or formato.supporto.id),_href=URL('default','supporto',args=(formato.supporto.id))) }} il {{ = formato.supporto.datacreazione }}
+            {{=formato.formato.tipo }}&nbsp;{{=T('in formato')}}&nbsp;{{ =A('%s n.%s' %(formato.supporto.tipo.nome,formato.supporto.id_originale),_href=URL('default','supporto',args=(formato.supporto.id_originale))) }} il {{ = formato.supporto.datacreazione }}
         {{ pass }}
     {{ else: }}
         {{=T('Nessun supporto associato. Perché non aggiungerne uno?')}}

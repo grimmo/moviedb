@@ -1,9 +1,5 @@
 {{extend 'layout.html'}}
-<h1><i class="icon-save"></i>&nbsp;{{= media.tipo.nome }}&nbsp;n.
-    {{ if media.id_originale: }}
-    {{ = media.id_originale }}&nbsp;<i class="glyphicon-asterisk" title="Imported from dbfilm"></i>
-    {{ else: }}
-		{{ = media.id }}
+<h1><i class="icon-save"></i>&nbsp;{{= media.tipo.nome }}&nbsp;n.{{ = media.id }}
     {{ pass }}
 </h1>
 <a class="btn btn-large btn-primary" href="{{ = URL('formato','edit',vars=dict(media_id=media.id))}}"><i class="icon-plus"></i>&nbsp;Aggiungi film</a>

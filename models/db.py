@@ -95,16 +95,6 @@ auth.settings.reset_password_requires_verification = True
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)
-<<<<<<< HEAD
-
-
-
-now = datetime.datetime.now()
-
-# Tabelle "ereditate" da dbfilm su django
-
-=======
->>>>>>> fd934ac013f7055bae2c01726a8b57160c1ce271
 db.define_table('tiposupporto',
       Field('nome','string',length=50),
       Field('permanente','boolean',default=False),
@@ -121,7 +111,7 @@ db.define_table('supporto',
       Field('collocazione',db.collocazione),
       Field('datacreazione','datetime',default=now),
       Field('datamodifica','datetime',default=now),
-      Field('id_originale','string',unique=True,length=10),
+      Field('id_originale','string',unique=True,length=10,label='numero'),
       format=lambda r: '%s n. %s ' % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id)
       )
       
