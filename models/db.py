@@ -216,7 +216,6 @@ db.tags.slug.requires = IS_NOT_IN_DB(db,'tags.slug')
 db.tags.film.requires = IS_IN_DB(db,'film.id','%(titolo)s',multiple=True)
 db.moviecast.slug.requires = IS_SLUG(check=False)
 db.film.slug.requires = [IS_SLUG(check=False),IS_NOT_IN_DB(db,'film.slug')]
-#db.film.tmdb_id.requires = IS_NOT_IN_DB(db,'film.tmdb_id')
 db.film.titolo.represent = lambda value,row:     A("%s (%s)" % (value,db.film(db.film.titolo==value).anno),_href=URL('film', args=db.film(db.film.titolo==value).id,extension='html'))
 db.moviecast.nome.represent = lambda value,row:     A(value, _href=URL('persona', args=db.moviecast(db.moviecast.nome==value).slug,extension='html'))
 # Campi virtuali

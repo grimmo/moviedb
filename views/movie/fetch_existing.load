@@ -28,13 +28,36 @@ Notice:
 even if the function is called via ajax.
 
 '''}}
-<h4>Elaborazione task {{ = task_details.id }} in corso...</h4>
-<p id="statustext" class="text-center">{{= task_details.status }}</p>
-<span class="titolitrovati">
-<!-- <div class="center-block"><img src="{{=URL('static','images',args=('ajax-loader.gif'))}}"></div> -->
-    <div class="progress">
-        <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="Attendere..." aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-        <span class="sr-only">Please wait...</span>
-        </div>
-    </div>
-</span>
+<div id="taskstatus">
+<h3 id="titolomodal">Inserimento del task nella coda batch..</h3>
+<img id="spinner" src="{{=URL('static','images',args=('ajax-loader.gif'))}}">
+<h4 id="statustext" class="text-warning"></h4>
+<script>
+$(document).ready (function(tmdb_id,movie_id) {
+  $.ajax({
+      type:'POST',
+      url: '{{ = URL("moviedb","movie","call",args=("json","fetch_existing")) }}',
+      data: {'tmdb_id': tmdb_id,'movie_id':movie_id},
+      dataType: 'json', //json data type
+      success: function (jsonData) {
+        $('#titolomodal').text('Elaborazione task n.'+jsonData.task_details.id+' in corso...');
+        var tasktimer = setInterval(function() {
+        var stato = $.getJSON("{{ = URL('moviedb','tasks','call/json',args=('status'))}}?task="+jsonData.task_details.id, function( data ) {
+                if (data.result == null) {
+                    $('#statustext').text(data.status);
+                }
+                else {
+                    $('#spinner').hide();
+                    $('#statustext').html("<a href=/moviedb/default/film/" + data.result.replace(/"/g,'') + ">" + data.result.replace(/"/g,'')+ "</a></h4>");
+                    clearInterval(tasktimer);
+                }
+           });
+        }, 2000);
+},
+      error: function () {
+      $('#spinner').hide();
+      $('#statustext').html('<h4 class="warning">Errore durante l\'inserimento del film</h4>');
+      }
+});
+}
+</script>

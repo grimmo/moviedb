@@ -36,7 +36,7 @@ even if the function is called via ajax.
        <table class="table table-striped table-hover table-bordered table-condensed">
             <tr><th>Titolo</th><th>Anno</th></tr>
             {{ for risultato in risultati: }}
-                <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s);" % risultato['tmdb_id'],_href='#') }}</td>&nbsp;<td>{{ = risultato['anno'] }}</td></tr>
+                <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s,%s);" % (risultato['tmdb_id'],risultato['update'] or None),_href='#') }}</td>&nbsp;<td>{{ = risultato['anno'] }}</td></tr>
             {{ pass }}
         </table>
       {{ pass }}
@@ -47,15 +47,16 @@ even if the function is called via ajax.
 <h4 id="statustext" class="text-warning"></h4>
 
 <script>
-function aggiorna_film(idfilm) {
-  $('#formricerca').fadeOut();
+function aggiorna_film(tmdb_id,movie_id) {
+  $('#formricerca').hide();
+  $('#risultati').hide();
   $('#taskstatus').show();
-  $('#risultati').fadeOut();
   $('#taskstatus').removeClass('hidden');
+  movie_id = movie_id || false;
   $.ajax({
       type:'POST',
-      url: '{{ = URL("moviedb","movie","call",args=("json","fetch_new")) }}',
-      data: {'tmdb_id': idfilm},
+      url: '{{ = URL("moviedb","movie","call/json",args=("fetch")) }}',
+      data: {'tmdb_id': tmdb_id,'movie_id':movie_id},
       dataType: 'json', //json data type
       success: function (jsonData) {
         $('#titolomodal').text('Elaborazione task n.'+jsonData.task_details.id+' in corso...');
@@ -63,8 +64,8 @@ function aggiorna_film(idfilm) {
         var stato = $.getJSON("{{ = URL('moviedb','tasks','call/json',args=('status'))}}?task="+jsonData.task_details.id, function( data ) {
                 if (data.result == null) {
                     $('#statustext').text(data.status);
-                }
-                else {
+               }
+               else {
                     $('#spinner').hide();
                     $('#statustext').html("<a href=/moviedb/default/film/" + data.result.replace(/"/g,'') + ">" + data.result.replace(/"/g,'')+ "</a></h4>");
                     clearInterval(tasktimer);
@@ -78,6 +79,7 @@ function aggiorna_film(idfilm) {
       }
 });
 }
+
 function redirect_to_result(url) {
     window.location.replace(url);
 }
