@@ -5,11 +5,8 @@
 {{ = film.titolo }}
 {{ except: }}
     <i class="icon-save"></i>&nbsp;{{= media.tipo.nome }}&nbsp;n.
-    {{ if media.id_originale: }}
-    {{ = media.id_originale }}&nbsp;<i class="icon-asterisk" title="Imported from dbfilm"></i>
-    {{ else: }}
-		{{ = media.id }}
-    {{ pass }}    
+    {{ = media.id_originale }}
 {{ pass }}
 </span>
+</h1>
 {{ = form }}

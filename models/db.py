@@ -111,10 +111,10 @@ db.define_table('supporto',
       Field('collocazione',db.collocazione),
       Field('datacreazione','datetime',default=now),
       Field('datamodifica','datetime',default=now),
-      Field('id_originale','string',unique=True,length=10,label='numero'),
+      Field('id_originale','integer',required=True,unique=True,label='numero'),
       format=lambda r: '%s n. %s ' % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id)
       )
-      
+
 db.define_table('moviecast',
      Field('nome','string',length=255),
      Field('slug','string',length=255),
@@ -208,7 +208,7 @@ db.episode.subs.requires = IS_IN_SET(['','ITA','ENG','ITA/ENG','ITA/OTH','OTH'])
 db.formato.tipo.requires = IS_IN_SET(['DVD','DIVX','XVID','MKV','AVI','H264','AVCHD'])
 db.supporto.tipo.requires = IS_IN_DB(db,db.tiposupporto.id,'%(nome)s')
 db.supporto.collocazione.requires= IS_IN_DB(db,db.collocazione.id,'%(descrizione)s')
-db.supporto.id.represent = lambda value,row: A("%s n. %s" % (db.tiposupporto[row.tipo].nome,value),_href=URL('supporto', args=value))
+db.supporto.id_originale.requires = IS_NOT_IN_DB(db,db.supporto.id_originale)
 db.formato.film.requires = IS_IN_DB(db,db.film.id,'%(titolo)s')
 db.formato.supporto.requires = IS_IN_DB(db,db.supporto.id,lambda r: "%s n. %s" % (db.tiposupporto[r.tipo].nome,r.id_originale or r.id))
 #db.formato.supporto.represent = lambda value,row: db.tipoformato[value].nome

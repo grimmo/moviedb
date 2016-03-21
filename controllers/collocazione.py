@@ -1,5 +1,7 @@
 # coding: utf8
-# prova qualcosa come
+from gluon.tools import Crud
+crud = Crud(db)
+
 @auth.requires_signature()
 def data():
     """
