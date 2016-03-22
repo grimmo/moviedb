@@ -44,6 +44,15 @@ def unseen():
     limitby=(page*items_per_page,(page+1)*items_per_page+1)
     return dict(film=movies_by_flag(limitby),page=page,items_per_page=items_per_page)
 
+def latest():
+    session.forget()
+    if len(request.args): page=int(request.args[0])
+    else: page=0
+    items_per_page=20
+    limitby=(page*items_per_page,(page+1)*items_per_page+1)
+    film = db(db.film.id>0).select(limitby=limitby,orderby=[db.film.datacreazione,db.film.titolo,db.film.anno])
+    return dict(film=film,page=page,items_per_page=items_per_page)
+
 def user():
     """
     exposes:

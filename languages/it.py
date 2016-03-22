@@ -203,6 +203,7 @@
 'RAM': 'RAM',
 'RAM Cache Keys': 'RAM Cache Keys',
 'Ram Cleared': 'Ram Cleared',
+'Recently added movies': 'Recently added movies',
 'Recipes': 'Recipes',
 'Record': 'Record',
 'Record Created': 'Record Created',
