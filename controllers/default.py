@@ -50,7 +50,10 @@ def latest():
     else: page=0
     items_per_page=20
     limitby=(page*items_per_page,(page+1)*items_per_page+1)
-    film = db(db.film.id>0).select(limitby=limitby,orderby=[db.film.datacreazione,db.film.titolo,db.film.anno])
+    if request.vars.unseen == True:
+        film = db(db.film.id>0).select(limitby=limitby,orderby=[~db.film.datacreazione,db.film.titolo,db.film.anno])
+    else:
+        film = db((db.film.id>0) & (db.film.visto == False)).select(limitby=limitby,orderby=[~db.film.datacreazione,db.film.titolo,db.film.anno])
     return dict(film=film,page=page,items_per_page=items_per_page)
 
 def user():

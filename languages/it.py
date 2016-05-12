@@ -141,6 +141,7 @@
 'Is Active': "E' attivo",
 'Key': 'Chiave',
 'Last name': 'Cognome',
+'Latest': 'Latest',
 'Layout': 'Layout',
 'Layout Plugins': 'Layout Plugins',
 'Layouts': 'Layouts',

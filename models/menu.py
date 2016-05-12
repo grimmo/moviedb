@@ -25,6 +25,7 @@ response.google_analytics_id = None
 
 response.menu = [
     (T('Home'), False, URL('default', 'index'), []),
+    (T('Latest'),False,URL('default','latest'), []),
     #(T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-plus'),_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[])
     (T('Nuovo'),False, A(SPAN(_class='glyphicon glyphicon-plus'),_href="#"),[
         (T('Film'),False, A(SPAN(_class='glyphicon glyphicon-film'),' film',_href="#",_onclick="$('#NewMovieModal').modal('toggle');"),[]),

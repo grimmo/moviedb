@@ -36,7 +36,11 @@ even if the function is called via ajax.
        <table class="table table-striped table-hover table-bordered table-condensed">
             <tr><th>Titolo</th><th>Anno</th></tr>
             {{ for risultato in risultati: }}
+                {{ try: }}
                 <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s,%s);" % (risultato['tmdb_id'],risultato['update'] or None),_href='#') }}</td>&nbsp;<td>{{ = risultato['anno'] }}</td></tr>
+                {{ except: }}
+                <tr><td>{{ = A(risultato['titolo'],_onclick="aggiorna_film(%s);" % (risultato['tmdb_id']),_href='#') }}</td>&nbsp;<td>{{ = risultato['anno'] }}</td></tr>
+                {{ pass }}
             {{ pass }}
         </table>
       {{ pass }}

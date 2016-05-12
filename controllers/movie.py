@@ -48,7 +48,8 @@ def find_title():
             if form.vars.update_movie:
                 risultati.append(dict(tmdb_id=r['id'],titolo=r['title'],anno=r['release_date'],trama=r['overview'],scheda_completa=r,update=form.vars.update_movie))
             else:
-                risultati.append(dict(tmdb_id=r['id'],titolo=r['title'],anno=r['release_date'],trama=r['overview'],scheda_completa=r))
+                risultati.append(dict(tmdb_id=r['id'],titolo=r['title'],anno=r['release_date'],trama=r['overview'],scheda_completa=r)) #risultati.append(dict(tmdb_id=r['id'],titolo=r['title'],anno=r['release_date'],trama=r['overview'],scheda_completa=r,update=None))
+                
         return dict(form=form,risultati=risultati)
    return dict(form=form,risultati=None)
 
