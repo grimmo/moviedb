@@ -10,6 +10,8 @@
 #########################################################################
 import cPickle,os
 import json
+from gluon.tools import Crud
+crud = Crud(db)
 
 def index():
     session.forget()
@@ -41,6 +43,18 @@ def unseen():
     items_per_page=20
     limitby=(page*items_per_page,(page+1)*items_per_page+1)
     return dict(film=movies_by_flag(limitby),page=page,items_per_page=items_per_page)
+
+def latest():
+    session.forget()
+    if len(request.args): page=int(request.args[0])
+    else: page=0
+    items_per_page=20
+    limitby=(page*items_per_page,(page+1)*items_per_page+1)
+    if request.vars.unseen == True:
+        film = db(db.film.id>0).select(limitby=limitby,orderby=[~db.film.datacreazione,db.film.titolo,db.film.anno])
+    else:
+        film = db((db.film.id>0) & (db.film.visto == False)).select(limitby=limitby,orderby=[~db.film.datacreazione,db.film.titolo,db.film.anno])
+    return dict(film=film,page=page,items_per_page=items_per_page)
 
 def user():
     """
@@ -75,19 +89,6 @@ def call():
     supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
     """
     return service()
-
-def pippo():
-    return dict()
-
-def cerca():
-    db.film.titolo.widget = SQLFORM.widgets.autocomplete(request, db.film.titolo, limitby=(0,10), min_length=2,id_field=db.film.slug)
-    form=SQLFORM(db.film,fields=['titolo'])
-    if form.validate():
-      redirect(URL('film',args=form.vars.titolo))
-    else:
-      submit = form.element('input',_type='submit')
-      submit['_style'] = 'display:none;'
-      return dict(form=form)
 
 @auth.requires_signature()
 def data():
@@ -140,7 +141,7 @@ def movieandcastedit():
     return dict(form=form)
 
 def supporto():
-    media = db.supporto(id=request.args(0))
+    media = db.supporto(id_originale=request.args(0))
     if not media:
         raise HTTP(404)
     if media.id_originale:
@@ -173,17 +174,16 @@ def nuovosupporto():
 def movieselect():
     "ajax dropdown search demo"
     return dict()
-
-def movie_selector():
+"""
+def search_selector():
     "navbar search function"
-    if not request.vars.moviesearch: return ''
+    if not request.vars.moviesearch or len(request.vars.moviesearch) < 2: return ''
     pattern = request.vars.moviesearch.capitalize()
     titoli_film = [(row.slug,row.titolo) for row in db(db.film.titolo.contains(pattern)).select(limitby=(0,10))]
     nomi_cast = [(row.nome,row.slug) for row in db(db.moviecast.nome.contains(pattern)).select(limitby=(0,10))]
     return DIV([LI(A(tit,_href=URL('default','film',args=sl),_tabindex="-1")) for sl,tit in titoli_film]+
     [LI(_class="divider")]+[LI(A(nome,_href=URL('default','persona',args=sl),_tabindex="-1")) for nome,sl in nomi_cast]
     )
-"""
 
 def associaformato(movieid,supportoid,tipo,multiaudio=False,surround=False):
     db.formato.update_or_insert(tipo=tipo,film=movieid,supporto=supportoid,multiaudio=multiaudio,surround=surround)
@@ -234,17 +234,3 @@ def update_formati():
     for row in film_e_formati.select(db.legacy_formato.tipo,db.film.id,db.supporto.id,db.legacy_formato.multiaudio,db.legacy_formato.surround):  righe.append(db.formato.insert(tipo=row.legacy_formato.tipo,film=row.film.id,supporto=row.supporto.id,multiaudio=row.legacy_formato.multiaudio,surround=row.legacy_formato.surround))
     return dict(righe=righe)
 '''
-
-def add_tmdb_api_key():
-    form=FORM('Enter your API key:', INPUT(_name='akey'), INPUT(_type='submit'))
-    if form.accepts(request,session) and form.vars.akey != "":
-        filepath = os.path.join(request.folder, "private", "themoviedb.key")
-        with open(filepath, 'wb') as tmdb_api_keyfile:
-            cPickle.dump(form.vars.akey, tmdb_api_keyfile)
-        session.flash = "API key added successfully"
-        redirect(URL('index'))
-    elif form.errors:
-        session.flash = "Error! Please input a valid key"
-    else:
-        session.flash = "Please input your api key"
-    return dict(form=form)

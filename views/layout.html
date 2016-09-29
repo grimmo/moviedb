@@ -64,11 +64,20 @@
           <ul class="nav navbar-nav navbar-right">
             {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
           </ul>
+               <form class="navbar-form navbar-right" role="search" onsubmit="return;false">
+<div class="form-group">
+<a class="dropdown-toggle" id="toggleresult" role="button" data-toggle="dropdown" data-target="#"> 
+<input type="text" class="form-control" placeholder="Cerca film, attori o registi" id="moviesearch" name="moviesearch" data-toggle="dropdown" autocomplete="off" onfocus="$('#dropdown_risultati').toggle();"></div></a>
+<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span></button>
+<ul class="dropdown-menu" role="menu" aria-labelledby="moviesearch" id="dropdown_risultati">
+</ul>
+</form>
           {{if response.menu:}}
           {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
           {{pass}}
         </div>
       </div>
+        
     </nav>
     <!-- Masthead ===================================== -->    
     {{block header}}
@@ -101,24 +110,22 @@
       {{pass}}
     </div>
 <!-- Modal -->
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="NewMovieModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+        <h4 class="modal-title" id="NewMovieModalLabel">Inserisci nuovo film</h4>
       </div>
       <div class="modal-body">
-        ...
+        {{=LOAD('movie','find_title.load',ajax=True)}}
       </div>
       <div class="modal-footer">
-        <!-- <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button> -->
       </div>
     </div>
   </div>
 </div>
-    {{block footer}} <!-- this is default footer -->      
+    {{block footer}} <!-- this is default footer -->
     <!-- <footer class="footer">
       <div class="container-fluid">
         <div class="copyright pull-left">{{=T('Copyright')}} &#169; {{=request.now.year}}</div>
@@ -142,5 +149,9 @@
       });
     </script>
     {{pass}}
+<script>
+jQuery("#moviesearch").keyup(function(){
+      ajax("{{=URL('default','search_selector')}}", ['moviesearch'], 'dropdown_risultati')});
+</script>
   </body>
 </html>

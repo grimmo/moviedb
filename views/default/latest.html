@@ -1,5 +1,8 @@
+{{extend 'layout.html'}}
+<h1>{{ =T('Recently added movies') }}</h1>
 {{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
 {{extend 'layout.html'}}
+<a href="{{ = URL('latest',vars=dict(unseen=True)) }}"><button>Ancora da vedere</button></a>
 <div id="elenco">
     <table class="table table-striped table-hover table-responsive">
         <thead><th>Titolo</th><th>Anno</th><th>Regia</th><th>Visto</th></thead>
