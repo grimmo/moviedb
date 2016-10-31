@@ -40,10 +40,10 @@
         </ul>
     </div>
 <div class="row">
-  <div class="col-md-4">
-      <img src="{{ = URL('download',args=film.locandina) }}" class="media-object" alt="locandina">
+  <div class="col-sm-8">
+      <img src="{{ = URL('download',args=film.locandina) }}" alt="locandina">
   </div>
-  <div class="col-md-4">
+  <div class="col-sm-4">
   <h3>Trama</h3>
     <h4>{{ = film.trama }}</h4>
     {{ if film.nota: }}
